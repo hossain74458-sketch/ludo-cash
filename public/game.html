@@ -6,7 +6,7 @@ html{scroll-padding-top:env(safe-area-inset-top,0px)}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#26223a;--bg2:#14121f;--fg:#f1eefc;--card:#33304a;--bd:#5a5580}}
 :root[data-theme="dark"]{--bg:#26223a;--bg2:#14121f;--fg:#f1eefc;--card:#33304a;--bd:#5a5580}
 body{margin:0;padding:10px;background:radial-gradient(circle at 50% 0,var(--bg),var(--bg2));min-height:100vh;color:var(--fg);font-family:"Noto Sans Bengali","Hind Siliguri","Nirmala UI","Kalpurush",system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;gap:10px}
-#bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between;width:100%;max-width:560px;font-size:13px}
+#bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between;width:100%;max-width:var(--gw,560px);font-size:13px}
 #leave{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:45}
 #leave .card{max-width:min(92vw,400px);text-align:center;line-height:1.7}#leave .row2{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 #who{font-weight:700;font-size:17px;display:flex;align-items:center;gap:8px}
@@ -24,9 +24,9 @@ canvas{display:block;touch-action:manipulation;border-radius:14px;box-shadow:0 8
 #big.show{animation:big 1.5s forwards}
 @keyframes big{0%{transform:translate(-50%,-50%) scale(0) rotate(-200deg);opacity:0}25%{transform:translate(-50%,-50%) scale(1.3) rotate(0);opacity:1}40%,75%{transform:translate(-50%,-50%) scale(1);opacity:1}100%{transform:translate(-50%,-50%) scale(.1);opacity:0}}
 #score{display:flex;gap:12px;font-size:13px;flex-wrap:wrap;justify-content:center}
-#cards{display:none;gap:6px;flex-direction:column;align-items:stretch;width:100%;max-width:560px;font-size:13px;font-weight:600}
+#cards{display:none;gap:6px;flex-direction:column;align-items:stretch;width:100%;max-width:var(--gw,560px);font-size:13px;font-weight:600}
 #cards .chip{background:var(--card);font-size:13px;padding:5px 10px}#cards .chip:disabled{cursor:default}
-#emo{display:flex;flex-wrap:wrap;gap:2px;align-items:center;justify-content:center;background:var(--card);padding:6px 8px;border-radius:12px;width:100%;max-width:560px;font-size:12px;box-shadow:0 2px 8px #0003}
+#emo{display:flex;flex-wrap:wrap;gap:2px;align-items:center;justify-content:center;background:var(--card);padding:6px 8px;border-radius:12px;width:100%;max-width:var(--gw,560px);font-size:12px;box-shadow:0 2px 8px #0003}
 .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:4px 0}
 .chip{border:2px solid var(--bd);background:transparent;color:var(--fg);border-radius:20px;padding:3px 9px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px}
 .chip.on{border-color:#e53935;font-weight:700}.chip i{width:10px;height:10px;border-radius:50%;display:inline-block}
@@ -55,8 +55,11 @@ button.go{background:#e53935;color:#fff;border:0;font-weight:700}
 #help{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:30}
 #help .card{max-width:min(92vw,470px);max-height:86vh;overflow:auto;font-size:13px;line-height:1.6}#help .it{margin:3px 0}
 #rules .it{margin:2px 0}
+.chip,.go,.cb,.eb,#dice{transition:transform .12s,filter .12s,box-shadow .12s}.chip:hover,.go:hover,.cb:not(:disabled):hover{filter:brightness(1.1);transform:translateY(-1px)}.chip:active,.go:active,.cb:active{transform:scale(.96)}
+@media(max-width:420px){#bar{font-size:12px}.card{padding:16px;min-width:0}}
+@media(min-width:900px){body{padding-top:16px}#emo{font-size:14px}.eb{font-size:28px}}
 </style></head><body>
-<div id="bar"><div id="who"><span id="dot"></span><span id="name"></span></div><span id="tmr"></span><button class="chip" id="hb">📖 নিয়ম</button><button class="chip" id="lv" style="background:#b71c1c;color:#fff;border-color:#b71c1c">❌ বাতিল করুন</button><label><input type="checkbox" id="snd" checked> শব্দ</label></div>
+<div id="bar"><div id="who"><span id="dot"></span><span id="name"></span></div><span id="tmr"></span><button class="chip" id="hb">📖 নিয়ম</button><button class="chip" id="lv" style="background:#b71c1c;color:#fff;border-color:#b71c1c">❌ বাতিল করুন</button><label><input type="checkbox" id="snd" checked> 🔊 শব্দ</label><label><input type="checkbox" id="mus" checked> 🎵 মিউজিক</label></div>
 <div id="msg"></div><div id="prize"></div>
 <div id="bw"><canvas id="cv"></canvas><button id="dice" disabled><div class="sc"><div class="cube" id="cube"></div></div></button><div id="big"></div></div>
 <div id="score"></div>
@@ -75,7 +78,7 @@ button.go{background:#e53935;color:#fff;border:0;font-weight:700}
 <div id="rules"></div></div></div>
 <div id="win"><h2 id="wt" style="margin:0"></h2><canvas id="wc"></canvas><div id="wr"></div><button class="go" id="wb">লবিতে ফিরুন</button></div>
 <script src="/socket.io/socket.io.js"></script>
-<script src="/net.js"></script>
+<script>document.write('<script src="'+(new URLSearchParams(location.search).has('practice')?'/practice.js':'/net.js')+'"><\/script>')</script>
 <script>
 const $=id=>document.getElementById(id),cv=$('cv'),ctx=cv.getContext('2d');
 const COL=['#e53935','#43a047','#fdd835','#1e88e5'],DK=['#7f1212','#17501b','#a67c00','#0b3a7a'],NM=['লাল','সবুজ','হলুদ','নীল'];
@@ -98,8 +101,37 @@ const PIPS=['000010000','100000001','100010001','101000101','101010101','1011011
 $('cube').innerHTML=PIPS.map((p,k)=>`<div class="fc" style="--t:${FT[k]}">${[...p].map(c=>`<i class="${c=='1'?'':'o'}"></i>`).join('')}</div>`).join('');
 let W=0,G=null,ac,es=0,et='all',lastE=0,WIN=null;const AVS=[null,null,null,null],NAMES=['','','',''];
 let FAST=false;const sleep=ms=>new Promise(r=>setTimeout(r,FAST?0:ms)),cur=()=>G.pl[G.turn],say=m=>$('msg').textContent=m;
-function beep(f,d){if(FAST||!$('snd').checked)return;try{ac=ac||new AudioContext();const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=f;g.gain.value=.05;o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+d)}catch(e){}}
-function fit(){const w=Math.min(innerWidth-20,560),D=devicePixelRatio||1;W=w;cv.style.width=cv.style.height=w+'px';cv.width=cv.height=Math.round(w*D);ctx.setTransform(D,0,0,D,0,0);$('big').style.fontSize=w*.12+'px';if(G)placeDice()}
+// ---------- সাউন্ড ইঞ্জিন: নরম টোন (মারিম্বার মতো) + ব্যাকগ্রাউন্ড মিউজিক (চালু/বন্ধ করা যায়) ----------
+const MUSIC_VOL=.5;                                   // মিউজিক বেশি/কম লাগলে এই সংখ্যা (০–১) বদলান
+const PREF=k=>{try{return localStorage.getItem(k)!=='0'}catch(e){return true}},SETP=(k,v)=>{try{localStorage.setItem(k,v?'1':'0')}catch(e){}};
+let sfxG,musG,musBus,musOn=false,musT=null,musBar=0,musNext=0;
+function ctxA(){if(!ac){ac=new(window.AudioContext||window.webkitAudioContext)();const comp=ac.createDynamicsCompressor();comp.connect(ac.destination);
+  sfxG=ac.createGain();sfxG.connect(comp);musG=ac.createGain();musG.gain.value=0;musG.connect(comp);
+  musBus=ac.createGain();musBus.connect(musG);const dl=ac.createDelay(1),fb=ac.createGain(),wet=ac.createGain();dl.delayTime.value=.36;fb.gain.value=.32;wet.gain.value=.3;   // হালকা প্রতিধ্বনি
+  musBus.connect(dl);dl.connect(fb);fb.connect(dl);dl.connect(wet);wet.connect(musG)}
+ if(ac.state==='suspended')ac.resume();return ac}
+function beep(f,d){if(FAST||!$('snd').checked)return;try{const a=ctxA(),t=a.currentTime,o=a.createOscillator(),g=a.createGain(),lp=a.createBiquadFilter(),low=f<260,len=Math.max(.06,d)+.14;
+ o.type=low?'sine':'triangle';lp.type='lowpass';lp.frequency.value=low?420:3000;o.frequency.setValueAtTime(low?f*1.5:f,t);if(low)o.frequency.exponentialRampToValueAtTime(Math.max(40,f*.5),t+len);
+ g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(low?.2:.1,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+len);
+ o.connect(lp);lp.connect(g);g.connect(sfxG);o.start(t);o.stop(t+len+.02)}catch(e){}}
+// মিউজিক: শান্ত C-মেজর (C–Am–F–G) লুপ: প্যাড + বেস + ছোট আর্পেজিও; প্রতিবার একটু আলাদা শোনায়
+const BPM=78,BEAT=60/BPM,BAR=BEAT*4,CH=[[60,64,67,71],[57,60,64,67],[53,57,60,64],[55,59,62,64]],hz=m=>440*Math.pow(2,(m-69)/12),ARP=[0,2,1,3,2,3,1,2];
+function tone(f,t,len,type,vol,cut,att){const o=ac.createOscillator(),g=ac.createGain(),lp=ac.createBiquadFilter();o.type=type;o.frequency.value=f;lp.type='lowpass';lp.frequency.value=cut;
+ g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+(att||.02));g.gain.exponentialRampToValueAtTime(.0001,t+len);o.connect(lp);lp.connect(g);g.connect(musBus);o.start(t);o.stop(t+len+.05)}
+function schedBar(t,n){const c=CH[n%4];
+ c.forEach(m=>{tone(hz(m-12),t,BAR+.9,'sine',.02,900,.9);tone(hz(m-12)*1.004,t,BAR+.9,'triangle',.009,700,.9)});          // নরম প্যাড
+ tone(hz(c[0]-24),t,BEAT*1.6,'sine',.07,300,.03);tone(hz(c[0]-24),t+BEAT*2,BEAT*1.4,'sine',.05,300,.03);                 // বেস
+ ARP.forEach((k,i)=>{if(Math.random()<.18)return;tone(hz(c[k]+12),t+i*BEAT/2+(Math.random()-.5)*.012,BEAT*1.1,'triangle',.032+Math.random()*.01,2600,.012)});   // আর্পেজিও
+ if(n%2===0)tone(hz(c[3]+24),t+BEAT*2.5,BEAT*2,'sine',.018,4000,.01)}                                                      // মাঝেমধ্যে ঘণ্টির সুর
+function musTick(){if(!musOn||!ac)return;while(musNext<ac.currentTime+.8){schedBar(musNext,musBar++);musNext+=BAR}}
+function musStart(){if(musOn)return;try{const a=ctxA();musOn=true;musG.gain.cancelScheduledValues(a.currentTime);musG.gain.setTargetAtTime(MUSIC_VOL,a.currentTime,.7);musNext=a.currentTime+.15;musTick();musT=setInterval(musTick,250)}catch(e){musOn=false}}
+function musStop(){musOn=false;clearInterval(musT);if(ac){musG.gain.cancelScheduledValues(ac.currentTime);musG.gain.setTargetAtTime(0,ac.currentTime,.2)}}
+$('snd').checked=PREF('ludo_sfx');$('mus').checked=PREF('ludo_music');
+$('snd').onchange=()=>SETP('ludo_sfx',$('snd').checked);
+$('mus').onchange=()=>{SETP('ludo_music',$('mus').checked);$('mus').checked?musStart():musStop()};
+addEventListener('pointerdown',()=>{if($('mus').checked)musStart()},{once:true});                       // ব্রাউজার প্রথম ট্যাপের আগে শব্দ চালাতে দেয় না
+document.addEventListener('visibilitychange',()=>{if(!ac)return;if(document.hidden)ac.suspend();else ac.resume()});
+function fit(){const cap=innerWidth>=900?Math.max(520,Math.min(740,innerHeight-230)):560,w=Math.min(innerWidth-20,cap),D=devicePixelRatio||1;W=w;document.documentElement.style.setProperty('--gw',w+'px');cv.style.width=cv.style.height=w+'px';cv.width=cv.height=Math.round(w*D);ctx.setTransform(D,0,0,D,0,0);$('big').style.fontSize=w*.12+'px';if(G)placeDice()}
 function placeDice(){const s=W/15,[bx,by]=YARD[cur().p],d=$('dice'),z=1.3;d.style.width=d.style.height=s*z+'px';d.style.setProperty('--z',s*z+'px');d.style.setProperty('--c',COL[cur().p]);d.style.left=(bx+3-z/2)*s+'px';d.style.top=(by+3-z/2)*s+'px'}
 function showBig(v){const b=$('big');b.textContent=v;b.style.setProperty('--c',COL[cur().p]);b.style.color=DK[cur().p];b.classList.remove('show');void b.offsetWidth;b.classList.add('show')}
 // r: -1 yard, 0..50 track, 51..55 home lane, 56 home
@@ -187,21 +219,22 @@ function blast(e,name){const L=$('fxl');if(!L||L.childElementCount>160)return;
   s.onanimationend=()=>s.remove();L.append(s)}
  beep(700,.08)}
 function react(f,to,e){blast(e,f.name)}
-function botReact(){}
+function botReact(f,to,list){if(!G||!G.hl||!f||f.human||Math.random()>.55)return;setTimeout(()=>{if(G&&G.phase!=='over')blast(list[Math.random()*list.length|0],f.name)},120+Math.random()*280)}   // প্র্যাকটিসে বট মাঝেমধ্যে ইমোজি পাঠায়
 function renderEmo(){const b=$('emo');if(b.dataset.on)return;b.dataset.on=1;
  const t=document.createElement('span');t.textContent='আপনার ইমোজি:';t.style.marginRight='4px';
  b.replaceChildren(t,...EM.map(e=>{const x=document.createElement('button');x.className='eb';x.textContent=e;
   x.onclick=()=>{if(Date.now()-lastE<1500)return;lastE=Date.now();NET.emoji(e)};return x}))}
 function newGame(n,h,k,smart,bet,first){const seats=n==2?[0,2]:n==3?[0,1,2]:[0,1,2,3];
  G={pl:seats.map((p,j)=>({p,human:j<h,t:Array(k).fill(-1),v:[],done:false,caps:0,c:[],sh:{},force:0,name:(NAMES[j]||'').trim()||(j<h?'খেলোয়াড় '+(j+1):NM[p]+' বট'),av:AVS[j]})),turn:0,dice:0,phase:'roll',sixes:0,mv:[],fx:[],fx2:[],amb:[],rank:[],moving:false,cu:null,smart,first,pot:bet*n};$('prize').style.display=bet>0?'block':'none';$('prize').textContent='🏆 পুরস্কার: ৳'+bet*n+'  ('+n+' × ৳'+bet+')';
- es=0;et='all';$('dice').style.display='block';say('');renderEmo();ui();if(!cur().human)setTimeout(botGo,700)}
-function next(){do{G.turn=(G.turn+1)%G.pl.length}while(cur().done);cur().sh={};G.cu=null;G.sixes=0;G.phase='roll';say('');ui();if(!cur().human)setTimeout(botGo,700)}
+ es=0;et='all';$('dice').style.display='block';say('');renderEmo();ui();if(!cur().human)setTimeout(botGo,350)}
+function next(){do{G.turn=(G.turn+1)%G.pl.length}while(cur().done);cur().sh={};G.cu=null;G.sixes=0;G.phase='roll';say('');ui();if(!cur().human)setTimeout(botGo,250)}
 async function roll(){if(!G||G.phase!=='roll')return;G.phase='anim';ui();
- const me0=cur(),d=me0.force||1+(await NET.rnd(6));me0.force=0;const c=$('cube'),b=$('dice'),[fx,fy]=FIN[d-1];
+ const me0=cur(),sp=(me0.human||!G.hl)?1:.4,d=me0.force||1+(await NET.rnd(6));me0.force=0;   // বটের পাশা ছোঁড়া দ্রুত (sp), মানুষের আগের মতোই
+ const c=$('cube'),b=$('dice'),[fx,fy]=FIN[d-1];
  b.style.transform='scale(1.45)';c.style.transition='none';c.style.transform=`rotateX(${Math.random()*90}deg) rotateY(${Math.random()*90}deg)`;void c.offsetWidth;
- c.style.transition='transform 1.1s cubic-bezier(.15,.8,.25,1)';c.style.transform=`rotateX(${720+fx}deg) rotateY(${1080+fy}deg)`;
- for(let i=0;i<9;i++){beep(300+i*25,.03);await sleep(125)}
- b.style.transform='';G.dice=d;showBig(d);beep(660,.12);await sleep(500);after()}
+ c.style.transition=`transform ${1.1*sp}s cubic-bezier(.15,.8,.25,1)`;c.style.transform=`rotateX(${720+fx}deg) rotateY(${1080+fy}deg)`;
+ for(let i=0;i<9;i++){beep(300+i*25,.03);await sleep(125*sp)}
+ b.style.transform='';G.dice=d;showBig(d);beep(660,.12);await sleep(500*sp);after()}
 function score(me,i){const r=me.t[i],nr=r<0?0:r+G.dice;let s=nr/5;if(r<0)s+=50;
  if(nr==56)s+=80;else if(nr>50)s+=30;if(nr==HDR)s-=60;
  if(nr<=50){const a=(START[me.p]+nr)%52;if(DNG.has(a))s-=60;else if(SAFE.has(a))s+=20;else if(G.pl.some(o=>o!==me&&o.t.some(q=>q>=0&&q<=50&&(START[o.p]+q)%52===a)))s+=100}
@@ -211,17 +244,17 @@ function after(){const me=cur(),d=G.dice;G.sixes=d==6?G.sixes+1:0;
  const mv=me.t.map((_,i)=>i).filter(i=>{const r=me.t[i];return r<0?d==6:r+d<=56});
  if(!mv.length){say('কোনো ঘুঁটি চালানো সম্ভব নয়');return setTimeout(next,FAST?0:900)}
  G.mv=mv;
- if(!me.human)return setTimeout(()=>move(G.smart?mv.map(i=>[score(me,i),i]).sort((a,b)=>b[0]-a[0])[0][1]:mv[Math.random()*mv.length|0]),600);
+ if(!me.human)return setTimeout(()=>move(G.hl?humanPick(me,mv):G.smart?mv.map(i=>[score(me,i),i]).sort((a,b)=>b[0]-a[0])[0][1]:mv[Math.random()*mv.length|0]),G.hl?160+Math.random()*260:250);
  if(mv.length==1||new Set(mv.map(i=>me.t[i])).size==1)return setTimeout(()=>move(mv[0]),FAST?0:350);
  G.phase='move';say(me.p===NET.color?'জ্বলজ্বলে ঘুঁটিতে ট্যাপ করে চাল দিন':'প্রতিপক্ষ কোন ঘুঁটি চালবে বেছে নিচ্ছে…');ui()}
 async function move(i){if(G.moving)return;G.moving=true;G.phase='anim';ui();
  const me=cur(),steps=me.t[i]<0?1:G.dice;
- for(let k=0;k<steps;k++){me.t[i]++;beep(480+k*35,.05);await sleep(170)}
+ for(let k=0;k<steps;k++){me.t[i]++;beep(480+k*35,.05);await sleep(me.human||!G.hl?170:90)}
  const bonus=(await settle(me,i,false))||G.dice==6;
  G.moving=false;
  if(finish(me))return;
  if(!bonus)return next();
- G.phase='roll';ui();if(!me.human)setTimeout(botGo,800)}
+ G.phase='roll';ui();if(!me.human)setTimeout(botGo,300)}
 // after a token has moved forward: danger tiles, captures, home, mystery box. returns true if it earns a bonus roll
 async function settle(me,i,card){let r=me.t[i],bonus=false;const vic=[];
  if(r<=50&&DNG.has((START[me.p]+r)%52)){const nb=1+(await NET.rnd(4));say('⚠ বিপদের ঘর! পান্ডা ঘুঁটিটাকে '+nb+' ঘর পেছনে ফেলে দিল');beep(120,.3);botReact(me,'all',['🤯']);await pushBack(me,i,nb);r=me.t[i]}
@@ -287,8 +320,19 @@ function botCard(me){const has=k=>me.c.includes(k);
  if(has('setopp')){const L=G.pl.filter(o=>o!==me&&!o.done&&!o.force).sort((p,q)=>q.t.reduce((x,y)=>x+y,0)-p.t.reduce((x,y)=>x+y,0));if(L.length)return{k:'setopp',a:{opp:L[0],val:argWorst(rollScores(L[0]))}}}
  if(has('setme')&&!me.force)return{k:'setme',a:{val:argBest(rollScores(me))}};
  return null}
+// মানুষের মতো বট (প্র্যাকটিস): ধরার সুযোগ প্রায় সবসময় নেয়, নিরাপদ/তারা ঘর পছন্দ করে, বিপদে থাকা ঘুঁটি সরায়, কার্ড কখনো ব্যবহার করে কখনো জমিয়ে রাখে, মাঝেমধ্যে ভুল করে — তাই ইচ্ছে করেই অজেয় নয়
+function riskAt(me,r){if(r<0||r>50)return false;const a=ab(me,r);if(SAFE.has(a)||me.t.filter(q=>q===r).length>0)return false;return G.pl.some(o=>o!==me&&o.t.some(q=>{if(q<0||q>50)return false;const dd=(a-ab(o,q)+52)%52;return dd>=1&&dd<=6}))}
+function humanPick(me,mv){if(mv.length===1)return mv[0];
+ const sc=mv.map(i=>{const r=me.t[i],nr=r<0?0:r+G.dice;let s=score(me,i);
+  if(nr<=50&&STARS.has(ab(me,nr)))s+=30;                                         // তারা ঘরে ঘুঁটি রাখতে ভালোবাসে
+  if(r>=0&&r<=50&&STARS.has(ab(me,r))&&nr!==56)s-=12;                            // তারা ঘরে বসা ঘুঁটি সহজে ছাড়ে না
+  if(r>=0&&r<=50&&threatened(me,i))s+=24;                                        // বিপদে থাকা ঘুঁটি বাঁচায়
+  if(riskAt(me,nr))s-=28;                                                        // শত্রুর নাগালে গিয়ে পড়তে চায় না
+  return[s+(Math.random()-.5)*50,i]}).sort((a,b)=>b[0]-a[0]);
+ return Math.random()<.14?mv[Math.random()*mv.length|0]:sc[0][1]}                // মাঝেমধ্যে এলোমেলো চাল (মানুষের ভুল)
 async function botGo(){if(!G||G.phase!=='roll')return;const me=cur();if(me.human)return;
- for(let n=0;n<2;n++){const p=botCard(me);if(!p)break;await playCard(me,p.k,p.a);if(!G||G.phase!=='roll'||cur()!==me)return;await sleep(300)}
+ if(G.hl){await sleep(120+Math.random()*220);if(!G||G.phase!=='roll'||cur()!==me)return}
+ for(let n=0;n<2;n++){const p=botCard(me);if(!p)break;if(G.hl&&Math.random()>(p.k==='shield'?.85:.6))break;await playCard(me,p.k,p.a);if(!G||G.phase!=='roll'||cur()!==me)return;await sleep(120)}
  roll()}
 async function jingle(long){for(const f of(long?[523,659,784,1047,784,1047,1319]:[523,659,784,1047])){beep(f,.14);await sleep(130)}}
 function over(){G.phase='over';ui();NET.over(G.rank[0]);const w=G.pl.find(o=>o.p==G.rank[0]);
@@ -337,6 +381,7 @@ const RULES=[
 '🚫 পরপর তিনবার ৬ উঠলে সেই চাল বাতিল হয়ে যায়।',
 '🍀 খেলার শুরুতে প্রত্যেকের প্রথম ১ থেকে ৪ চালের মধ্যে একবার ৬ উঠবেই। এরপর পাশা সম্পূর্ণ এলোমেলো।',
 '⏳ প্রথমবার ৩০ সেকেন্ডে চাল না দিলে চাল প্রতিপক্ষের কাছে চলে যায়। এরপর চাল পেলে ১৫ সেকেন্ড সময় পাবেন। আবার চাল না দিলে (নেট সমস্যা বা বেরিয়ে গেলে) আপনার হয়ে সহজ বট খেলবে। ফিরে এলে বট থেমে যাবে। এভাবে খেলা শেষ পর্যন্ত চলবে।',
+'⌛ দুজনই একসাথে ৫ মিনিট অফলাইন থাকলে বা কেউই না খেললে ম্যাচ বাতিল হয়: দুজনের এন্ট্রি ফি থেকে ৫% কেটে বাকি টাকা ওয়ালেটে ফেরত যায় এবং দুজনকেই লবিতে পাঠানো হয়।',
 '🔄 নেট চলে গেলে বা পেজ বন্ধ হলে আবার ঢুকলে খেলা যেখানে ছিল সেখান থেকেই চলবে। খেলা শেষ হওয়ার আগে কেউ জিতবে না।',
 '🎁 মিস্ট্রি বক্স: প্রতিটি শুরুর ঘর থেকে ৩য় ঘরে ঘুঁটি থামলে প্রতিবার এলোমেলো একটি কার্ড পাওয়া যায় — আগের বারের কার্ডটি আবার আসে না (সর্বোচ্চ ৪টি কার্ড রাখা যায়)। কার্ড পাশা ছোঁড়ার আগে ব্যবহার করতে হয়।',
 '😀 ইমোজি শুধু আপনার নিজের স্ক্রিন থেকে পাঠানো যায়। পাঠালে দুজনেরই পুরো স্ক্রিনে ছড়িয়ে পড়ে।',

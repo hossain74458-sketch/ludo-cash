@@ -11,7 +11,23 @@
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% 0,#2c2748,var(--bg));color:var(--tx);font:15px/1.5 "Noto Sans Bengali","Hind Siliguri","Nirmala UI","Kalpurush",system-ui,sans-serif;min-height:100vh;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
 .wrap{max-width:520px;margin:0 auto;padding:14px}.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:16px;margin-bottom:14px}
 h1{margin:6px 0 14px;text-align:center}h3{margin:0 0 10px}input,select{width:100%;padding:11px;margin:5px 0;border-radius:10px;border:1px solid var(--bd);background:#16142a;color:var(--tx);font-size:15px;font-family:inherit}
-button{border:0;border-radius:10px;padding:11px 14px;font-size:15px;font-weight:700;color:#fff;background:var(--ac);cursor:pointer;font-family:inherit}button.s{background:#3b3659}button.ok{background:var(--ok)}button:disabled{opacity:.5}
+button{position:relative;overflow:hidden;border:0;border-radius:10px;padding:11px 14px;font-size:15px;font-weight:700;color:#fff;background:var(--ac);cursor:pointer;font-family:inherit;transition:transform .12s,filter .15s,box-shadow .15s}button.s{background:#3b3659}button.ok{background:var(--ok)}button:disabled{opacity:.5;cursor:not-allowed}
+/* বোতামে মাউস রাখলে/ক্লিক করলে স্পষ্ট বোঝা যায় */
+button:not(:disabled):hover{filter:brightness(1.14);transform:translateY(-2px);box-shadow:0 6px 16px #0007}
+button:not(:disabled):active{transform:translateY(0) scale(.95);filter:brightness(.9);box-shadow:none}
+button:focus-visible,.stake:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+button.busy{pointer-events:none;opacity:.75}
+.rip{position:absolute;border-radius:50%;background:#fff6;transform:scale(0);animation:rip .55s ease-out forwards;pointer-events:none}@keyframes rip{to{transform:scale(1);opacity:0}}
+.stake{transition:transform .12s,border-color .15s,box-shadow .15s,background .15s}.stake:hover{border-color:#8a84b8;transform:translateY(-2px);box-shadow:0 6px 14px #0006}.stake:active{transform:scale(.95)}.stake.on{box-shadow:0 0 0 2px var(--gold),0 6px 18px #ffd54f33}
+.lrow{transition:border-color .15s,transform .12s}.lrow:hover{border-color:var(--ok);transform:translateX(2px)}
+.tabs button.on{box-shadow:inset 0 -4px 0 var(--gold)}
+.bad{border-color:#ef4444!important;background:#2a1216!important}.ferr{color:#ff7b7b;font-size:13px;font-weight:600;margin:-1px 2px 6px}
+@keyframes shk{20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}.shake{animation:shk .35s}
+.botsel{display:flex;gap:8px;margin:8px 0}.botsel button{flex:1;background:#3b3659}.botsel button.on{background:var(--gold);color:#2a1d00;box-shadow:0 0 0 2px #fff4}
+#cfm{position:fixed;inset:0;background:#000c;z-index:40;display:none;align-items:center;justify-content:center;padding:20px}#cfm .card{max-width:380px;width:100%;margin:0;text-align:center;line-height:1.7}
+/* বড় স্ক্রিন (পিসি/ট্যাবলেট): লবি দুই কলামে */
+@media(min-width:900px){#lobby.wrap{max-width:1040px;display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}#lobby>.card{margin:0}h1{font-size:34px}}
+@media(max-width:380px){.wrap{padding:10px}.card{padding:13px}.bal{font-size:30px}.stakes{gap:6px}}
 .row{display:flex;gap:8px}.row>*{flex:1}.bal{text-align:center;font-size:34px;font-weight:800;color:var(--gold)}.bal small{display:block;font-size:12px;color:var(--mu);font-weight:400}
 .stakes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}.stake{padding:14px 4px;border:2px solid var(--bd);border-radius:12px;text-align:center;cursor:pointer;background:#16142a}
 .stake.on{border-color:var(--gold);background:#3a3216}.stake b{font-size:18px;display:block}.stake small{color:var(--mu)}
@@ -29,10 +45,12 @@ button{border:0;border-radius:10px;padding:11px 14px;font-size:15px;font-weight:
 .inst button{background:var(--gold);color:#2a1d00;flex:none;padding:10px 14px}
 #iosHelp{position:fixed;inset:0;background:#000c;z-index:30;display:none;align-items:center;justify-content:center;padding:20px}
 #iosHelp .card{max-width:380px;line-height:1.8;margin:0}
+.tg{display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;background:#229ed9;color:#fff;padding:12px;border-radius:12px;font-weight:700}.tg small{font-weight:400;opacity:.9}
 .p{color:#fbbf24}.a{color:var(--ok)}.r{color:#f87171}.hide{display:none!important}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#000e;padding:10px 16px;border-radius:20px;z-index:20;display:none;max-width:90vw;text-align:center}
 </style></head><body>
 <div id="toast"></div>
+<div id="cfm"><div class="card"><h3>🎲 ম্যাচ শুরু করবেন?</h3><div id="cfmTxt"></div><div class="row" style="margin-top:12px"><button class="s" id="cfmNo">না, থাক</button><button class="ok" id="cfmYes">✅ হ্যাঁ, খেলব</button></div></div></div>
 <div id="iosHelp"><div class="card"><h3>📲 অ্যাপ ইনস্টল করুন</h3><div id="iosTxt"></div><button class="s" style="width:100%;margin-top:10px" onclick="document.getElementById('iosHelp').style.display='none'">বুঝেছি</button></div></div>
 <div class="wrap" id="instWrap" style="padding-bottom:0;display:none"><div class="inst"><img src="/icons/icon-192.png" alt=""><div><b>Ludo Cash অ্যাপ</b>ফোনের হোম স্ক্রিনে আইকন বসান, অ্যাপের মতো খুলবে</div><button id="installBtn">📲 Install App</button></div></div>
 
@@ -50,12 +68,19 @@ button{border:0;border-radius:10px;padding:11px 14px;font-size:15px;font-weight:
       <button type="submit" id="aGo" style="width:100%;margin-top:8px">প্রবেশ করুন</button>
     </form>
     <div class="note">আপনার নামের পেছনে নিজে থেকেই একটি সংখ্যা যুক্ত হয়ে ইউজারনেম তৈরি হবে। প্রবেশের পর ব্রাউজার পাসওয়ার্ড সেভ করার অপশন দেখালে "সেভ" চাপুন — পরের বার নিজে থেকেই ভরে যাবে। আগের অ্যাকাউন্টে ঢুকতে পুরো ইউজারনেম লিখুন (যেমন: nayem_56748)।</div>
+    <div style="margin-top:10px"><a class="tg supLink" href="https://t.me/na5yem" target="_blank" rel="noopener noreferrer">💬 পাসওয়ার্ড ভুলে গেছেন? টেলিগ্রামে যোগাযোগ করুন</a></div>
   </div>
 </div>
 
 <div id="lobby" class="wrap hide">
   <div class="card"><div class="row" style="align-items:center"><div style="display:flex;align-items:center;gap:10px"><label class="av sm" id="uav" style="cursor:pointer" title="ছবি বদলান">👤<input id="uFile" type="file" accept="image/*" style="display:none"></label><b id="uname"></b></div><button class="s" id="out" style="flex:none">লগআউট</button></div>
     <div class="bal"><small>ওয়ালেট ব্যালেন্স</small>৳<span id="bal">0</span></div></div>
+
+  <div class="card"><h3>🤖 বটের সাথে ফ্রি খেলুন</h3><div class="note" style="margin-bottom:10px">কোনো টাকা লাগবে না, ব্যালেন্সেও হাত পড়বে না। প্রতিপক্ষ না থাকলেও এখানে বটের সাথে খেলে দেখে নিতে পারেন (শুধু প্র্যাকটিস — জিতলে টাকা পাওয়া যায় না)।</div>
+    <div class="note">কয়টি বটের সাথে খেলবেন বেছে নিন:</div>
+    <div class="botsel" id="botSel"><button data-n="1" class="on">🤖 ১ বট</button><button data-n="2">🤖🤖 ২ বট</button><button data-n="3">🤖🤖🤖 ৩ বট</button></div>
+    <div class="note" id="botNote" style="margin-bottom:8px"></div>
+    <button class="ok" id="prac" style="width:100%">🤖 বটের সাথে ফ্রি খেলুন</button></div>
 
   <div class="card"><h3>🟢 এখন যেসব গেম অপেক্ষায় আছে</h3><div class="note">কেউ এন্ট্রি দিয়ে প্রতিপক্ষের জন্য অপেক্ষা করলে এখানে সাথে সাথে দেখা যাবে। সংখ্যা মানে কতজন অপেক্ষায়। "খেলুন" চাপলেই সরাসরি ম্যাচ শুরু।</div><div class="live" id="live"></div></div>
 
@@ -79,6 +104,7 @@ button{border:0;border-radius:10px;padding:11px 14px;font-size:15px;font-weight:
       <div class="note">আবেদন করলেই ব্যালেন্স থেকে টাকা কেটে রাখা হবে। আবেদন বাতিল হলে টাকা ফেরত আসবে।</div></div></div>
 
   <div class="card"><h3>🧾 লেনদেনের ইতিহাস</h3><table id="hist"></table></div>
+  <div class="card"><h3>💬 সাহায্য লাগবে?</h3><div class="note" style="margin-bottom:10px">পাসওয়ার্ড ভুলে গেলে, জমা/উত্তোলনে সমস্যা হলে বা কিছু জানতে টেলিগ্রামে মেসেজ দিন।</div><a class="tg supLink" href="https://t.me/na5yem" target="_blank" rel="noopener noreferrer">💬 Support</a></div>
 </div>
 
 <script>
@@ -90,6 +116,16 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 let token=localStorage.getItem('tk'),me=null,socket=null,stake=100,fx=0;
 const toast=m=>{const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(fx);fx=setTimeout(()=>t.style.display='none',3500)};
 const show=id=>['auth','lobby'].forEach(x=>$(x).classList.toggle('hide',x!==id));
+// ── ফিল্ড খালি বা ভুল থাকলে সেই ঘরেই লাল বর্ডার + লাল লেখায় সতর্কতা ──
+function clr(el){el.classList.remove('bad');const n=el.nextElementSibling;if(n&&n.classList.contains('ferr'))n.remove()}
+function bad(el,msg){clr(el);el.classList.add('bad');const d=document.createElement('div');d.className='ferr';d.textContent='⚠ '+msg;el.after(d);el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake');return el}
+function check(rules){let first=null;const seen=new Set();for(const[el,ok,msg]of rules){if(seen.has(el))continue;if(!ok(el.value.trim())){bad(el,msg);seen.add(el);first=first||el}else clr(el)}if(first){first.scrollIntoView({block:'center',behavior:'smooth'});first.focus({preventScroll:true})}return!first}
+document.addEventListener('input',e=>{if(e.target.classList&&e.target.classList.contains('bad'))clr(e.target)});
+document.addEventListener('change',e=>{if(e.target.classList&&e.target.classList.contains('bad'))clr(e.target)});
+const PH=/^01[3-9]\d{8}$/,num=v=>/^\d+$/.test(v)?parseInt(v,10):NaN;
+function busy(b,txt,fn){const old=b.textContent;b.classList.add('busy');b.disabled=true;b.textContent=txt;return Promise.resolve().then(fn).finally(()=>{b.classList.remove('busy');b.disabled=false;b.textContent=old})}
+// ক্লিকের ঢেউ (ripple): বোতামে চাপ পড়লে সেখানে আলো ছড়ায়
+document.addEventListener('pointerdown',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;const r=b.getBoundingClientRect(),z=Math.max(r.width,r.height)*2,d=document.createElement('span');d.className='rip';d.style.cssText=`width:${z}px;height:${z}px;left:${e.clientX-r.left-z/2}px;top:${e.clientY-r.top-z/2}px`;b.append(d);setTimeout(()=>d.remove(),600)});
 const prizeOf=s=>s*2-Math.floor(s*2*FEE/100);       // মোট পুল থেকে ফি কাটার পর
 async function api(url,body){const r=await fetch(url,{method:body?'POST':'GET',headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:body?JSON.stringify(body):undefined});
   const j=await r.json().catch(()=>({}));if(!r.ok){const e=new Error(j.error||'কিছু একটা সমস্যা হয়েছে');e.status=r.status;throw e}return j}
@@ -127,7 +163,9 @@ function entry(){                                  // টাইপ করা ন
   const b=[...v.replace(BAD,'')].slice(0,12).join('');return b?{u:b+'_'+suf,fresh:true}:null}
 function preview(){const r=entry();$('uPrev').innerHTML=r?(r.fresh?'আপনার ইউজারনেম হবে: ':'এই অ্যাকাউন্টে ঢুকবেন: ')+'<b>'+esc(r.u)+'</b>':''}
 $('aName').oninput=preview;
-$('af').onsubmit=async ev=>{ev.preventDefault();const r=entry();if(!r)return toast('আগে আপনার নাম লিখুন');
+$('af').onsubmit=async ev=>{ev.preventDefault();const r=entry();
+  if(!check([[$('aName'),v=>!!(v&&r),'আপনার নাম লিখুন'],[$('aPass'),v=>v.length>0,'পাসওয়ার্ড দিন']]))return;
+  if($('aPass').value.length<6)return void bad($('aPass'),'পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে');
   const pw=$('aPass').value;$('aGo').disabled=true;
   try{const j=await api('/api/enter',{username:r.u,password:pw,fresh:r.fresh,avatar:photo||undefined});
     token=j.token;localStorage.setItem('tk',token);
@@ -146,19 +184,45 @@ function paintStake(){document.querySelectorAll('.stake').forEach(d=>d.classList
 const cnt=s=>(QS[s]||0)-(inQ&&s===qStake?1:0);          // নিজেকে বাদ দিয়ে গোনা
 function renderLive(){const rows=STAKES.filter(s=>cnt(s)>0);
   $('live').innerHTML=rows.length?rows.map(s=>`<div class="lrow"><div class="badge">${cnt(s)}</div><b>Prize Money ৳${s} available<small>জিতলে ৳${prizeOf(s)} পাবেন</small></b><button class="ok" data-join="${s}"${inQ?' disabled':''}>খেলুন</button></div>`).join(''):'<div class="empty">এই মুহূর্তে কেউ অপেক্ষায় নেই। নিচ থেকে নতুন গেম দিন।</div>'}
-$('live').onclick=e=>{const b=e.target.closest('button[data-join]');if(!b||inQ||!socket)return;stake=+b.dataset.join;paintStake();socket.emit('joinQueue',{userId:me.id,betAmount:stake})};
+// "খেলুন" চাপলে সাথে সাথে নয় — ভুল ক্লিক ঠেকাতে আরেকবার নিশ্চিত করতে হয়
+let pendJoin=0;
+$('live').onclick=e=>{const b=e.target.closest('button[data-join]');if(!b||inQ||!socket)return;pendJoin=+b.dataset.join;
+  $('cfmTxt').innerHTML=`<b>৳${pendJoin}</b> এন্ট্রি ফি দিয়ে ম্যাচ খেলবেন?<br><small style="color:var(--mu)">প্রতিপক্ষ ঠিক হলেই ম্যাচ শুরু হবে ও এন্ট্রি ফি কাটা হবে। জিতলে পাবেন ৳${prizeOf(pendJoin)}।</small>`;
+  $('cfm').style.display='flex';$('cfmYes').focus()};
+$('cfmNo').onclick=()=>{$('cfm').style.display='none';pendJoin=0};
+$('cfmYes').onclick=()=>{$('cfm').style.display='none';const s=pendJoin;pendJoin=0;if(!s||inQ||!socket)return;
+  if(me&&me.balance<s)return toast('ব্যালেন্স যথেষ্ট নয়, আগে টাকা জমা দিন');stake=s;paintStake();socket.emit('joinQueue',{userId:me.id,betAmount:s})};
+$('cfm').onclick=e=>{if(e.target.id==='cfm')$('cfmNo').click()};
 $('tDep').onclick=()=>{$('pDep').classList.remove('hide');$('pWd').classList.add('hide');$('tDep').classList.add('on');$('tWd').classList.remove('on')};
 $('tWd').onclick=()=>{$('pWd').classList.remove('hide');$('pDep').classList.add('hide');$('tWd').classList.add('on');$('tDep').classList.remove('on')};
 const payInfo=()=>{const o=$('dM'),k=o.value.split(' ')[0];$('payInfo').innerHTML=`আগে <b>${esc(o.options[o.selectedIndex].text)}</b> নাম্বার <b>${PAY[k]}</b>-এ সেন্ড মানি করুন, তারপর নিচে ট্রানজেকশন আইডি (TrxID) দিন।`};
 $('dM').onchange=payInfo;payInfo();
-$('dGo').onclick=async()=>{try{await api('/api/deposit',{payment_method:$('dM').value,sender_number:$('dSender').value.trim(),amount:parseInt($('dAmt').value),transaction_id:$('dTrx').value.trim()});
-  toast('জমার আবেদন গেছে, অ্যাডমিন অনুমোদন করলে ব্যালেন্সে টাকা আসবে');$('dTrx').value='';hist()}catch(e){toast(e.message)}};
-$('wGo').onclick=async()=>{try{await api('/api/withdraw',{payment_method:$('wM').value,recipient_number:$('wNum').value.trim(),amount:parseInt($('wAmt').value)});
-  toast('তোলার আবেদন গেছে');$('wAmt').value='';hist()}catch(e){toast(e.message)}};
+$('dGo').onclick=()=>{
+  if(!check([[$('dSender'),v=>v!=='','আপনার (সেন্ডার) নাম্বার দিন'],[$('dSender'),v=>v===''||PH.test(v),'নাম্বারটি ঠিক নয় (১১ সংখ্যা, 01 দিয়ে শুরু)'],
+    [$('dAmt'),v=>v!=='','টাকার পরিমাণ দিন'],[$('dAmt'),v=>v===''||num(v)>=10,'কমপক্ষে ৳10 জমা দিতে হবে (পূর্ণ সংখ্যা)'],
+    [$('dTrx'),v=>v!=='','ট্রানজেকশন আইডি (TrxID) দিন'],[$('dTrx'),v=>v===''||/^[A-Za-z0-9]{6,20}$/.test(v),'TrxID ঠিক নয় (৬–২০টি ইংরেজি অক্ষর/সংখ্যা)']]))return;
+  return busy($('dGo'),'⏳ পাঠানো হচ্ছে…',async()=>{try{await api('/api/deposit',{payment_method:$('dM').value,sender_number:$('dSender').value.trim(),amount:parseInt($('dAmt').value,10),transaction_id:$('dTrx').value.trim()});
+    toast('জমার আবেদন গেছে, অ্যাডমিন অনুমোদন করলে ব্যালেন্সে টাকা আসবে');$('dTrx').value='';hist()}
+    catch(e){if(/ট্রানজেকশন/.test(e.message))bad($('dTrx'),e.message);else if(/নাম্বার/.test(e.message))bad($('dSender'),e.message);else if(/টাকার পরিমাণ/.test(e.message))bad($('dAmt'),e.message);else toast(e.message)}})};
+$('wGo').onclick=()=>{
+  if(!check([[$('wNum'),v=>v!=='','যে নাম্বারে টাকা নেবেন সেটি দিন'],[$('wNum'),v=>v===''||PH.test(v),'নাম্বারটি ঠিক নয় (১১ সংখ্যা, 01 দিয়ে শুরু)'],
+    [$('wAmt'),v=>v!=='','টাকার পরিমাণ দিন'],[$('wAmt'),v=>v===''||num(v)>=MINWD,'সর্বনিম্ন উত্তোলন ৳'+MINWD],
+    [$('wAmt'),v=>!(num(v)>(me?me.balance:1e12)),'ব্যালেন্সে এত টাকা নেই']]))return;
+  return busy($('wGo'),'⏳ পাঠানো হচ্ছে…',async()=>{try{await api('/api/withdraw',{payment_method:$('wM').value,recipient_number:$('wNum').value.trim(),amount:parseInt($('wAmt').value,10)});
+    toast('তোলার আবেদন গেছে');$('wAmt').value='';hist()}
+    catch(e){if(/নাম্বার/.test(e.message))bad($('wNum'),e.message);else if(/উত্তোলন|ব্যালেন্স/.test(e.message))bad($('wAmt'),e.message);else toast(e.message)}})};
 const fmt=ts=>{const d=new Date(String(ts).replace(' ','T')+'Z');return isNaN(d)?'':d.toLocaleString('bn-BD',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})};  // সময় বাংলাদেশের সময়ে
 async function hist(){try{const L=await api('/api/transactions');
   const N={deposit:'জমা',withdraw:'উত্তোলন',bet_deduct:'এন্ট্রি ফি',bet_win:'পুরস্কার/ফেরত'},ST={pending:'অপেক্ষমাণ',approved:'সম্পন্ন',rejected:'বাতিল'};
   $('hist').innerHTML=L.length?L.map(t=>{const plus=t.type=='deposit'||t.type=='bet_win';return`<tr><td>${N[t.type]||esc(t.type)}</td><td class="${plus?'a':'r'}">${plus?'+':'-'}৳${t.amount}</td><td class="${t.status[0]=='p'?'p':t.status[0]=='a'?'a':'r'}">${ST[t.status]||esc(t.status)}</td><td>${fmt(t.timestamp)}</td></tr>`}).join(''):'<tr><td>কোনো লেনদেন নেই</td></tr>'}catch{}}
+let nBots=1;
+const botNote=()=>{const bn=n=>String(n).replace(/\d/g,d=>'০১২৩৪৫৬৭৮৯'[d]);$('botNote').textContent=`আপনি ১ জন + ${bn(nBots)}টি বট = মোট ${bn(nBots+1)} জন খেলবে`;document.querySelectorAll('#botSel button').forEach(b=>b.classList.toggle('on',+b.dataset.n===nBots))};
+$('botSel').onclick=e=>{const b=e.target.closest('button[data-n]');if(!b)return;nBots=+b.dataset.n;botNote()};botNote();
+$('prac').onclick=()=>{location.href='/game.html?practice=1&bots='+nBots};
+// সাপোর্ট বোতাম (অ্যাডমিন প্যানেল থেকে নাম/টেলিগ্রাম বদলানো যায়)
+function setSupport(s){if(!s||!/^[A-Za-z][A-Za-z0-9_]{4,31}$/.test(s.telegram||''))return;
+  document.querySelectorAll('.supLink').forEach((a,i)=>{a.href='https://t.me/'+s.telegram;a.textContent=i===0?'💬 পাসওয়ার্ড ভুলে গেছেন? '+s.name+'-কে টেলিগ্রামে জানান':'💬 '+s.name+' (@'+s.telegram+')'})}
+fetch('/api/config').then(r=>r.json()).then(c=>setSupport(c.support)).catch(()=>{});
 $('play').onclick=()=>socket.emit('joinQueue',{userId:me.id,betAmount:stake});
 $('cancelQ').onclick=()=>{socket.emit('leaveQueue');queued(false)};
 const queued=q=>{inQ=q;$('play').classList.toggle('hide',q);$('cancelQ').classList.toggle('hide',!q);renderLive()};
@@ -172,6 +236,7 @@ async function start(){try{me=await api('/api/me')}catch{localStorage.removeItem
   socket.on('queueJoined',d=>{qStake=d.betAmount;queued(true)});
   socket.on('queueStats',s=>{QS=s||{};renderLive()});
   socket.on('errorMsg',({message})=>{toast(message);queued(false)});
+  socket.on('matchAbandoned',d=>{toast(`⏳ দুজনই খেলেননি, ম্যাচ বাতিল। ৳${d.fee} (৫%) কেটে ৳${d.refund} ফেরত পেয়েছেন`);queued(false);hist()});
   socket.on('matchStart',m=>{location.href='/game.html?room='+m.roomId});
   socket.on('matchActive',m=>{location.href='/game.html?room='+m.roomId})}   // চলমান ম্যাচ থাকলে সরাসরি সেখানে ফেরত পাঠায়
 (async()=>{try{const c=await fetch('/api/config').then(r=>r.json());if(Array.isArray(c.stakes))STAKES=c.stakes;if(c.feePct!=null)FEE=c.feePct;if(c.pay){if(c.pay.bKash)PAY.bKash=c.pay.bKash;if(c.pay.Nagad)PAY.Nagad=c.pay.Nagad;payInfo()}if(c.minWd!=null){MINWD=c.minWd;$('wAmt').placeholder='টাকার পরিমাণ (কমপক্ষে ৳'+MINWD+')'}}catch{}

@@ -94,6 +94,7 @@ const NET = (() => {
           if (d.winnerId === d.me) t = `🏆 আপনি জিতেছেন! ৳${d.payout} আপনার ওয়ালেটে যোগ হয়েছে`;
           else if (d.winnerId) t = `😞 আপনি হেরেছেন। ৳${d.bet} হারিয়েছেন`;
           else if (d.disputed) t = '⚠️ ফলাফল নিয়ে সমস্যা হয়েছে। অ্যাডমিন দেখা পর্যন্ত টাকা আটকে থাকবে।';
+          else if (d.idleFee != null) t = `⏳ দুজনই ৫ মিনিট খেলেননি, তাই ম্যাচ বাতিল হয়েছে। ৳${d.idleFee} (৫%) কেটে ৳${d.refund} আপনার ওয়ালেটে ফেরত দেওয়া হয়েছে।`;
           else t = 'ম্যাচ বাতিল হয়েছে, আপনার টাকা ফেরত দেওয়া হয়েছে।';
         }
         banner(t, 'lobby');
@@ -120,6 +121,11 @@ const NET = (() => {
       socket.on('emoji', d => { if (typeof blast === 'function') blast(d.e, d.name); });
       socket.on('opponentDisconnected', () => banner('প্রতিপক্ষের নেট চলে গেছে বা তিনি বেরিয়ে গেছেন। খেলা বন্ধ হবে না। চাল না দিলে প্রথমে চাল আপনার কাছে আসবে, এরপর সহজ বট তার হয়ে খেলবে; তিনি ফিরলে বট থেমে যাবে।'));
       socket.on('opponentReconnected', () => hideBanner());
+      socket.on('matchAbandoned', d => {             // দুজনই অফলাইন/নিষ্ক্রিয় ছিল: ৫% কেটে টাকা ফেরত, লবিতে পাঠানো হচ্ছে
+        finishUi(); if (typeof G !== 'undefined' && G) G.phase = 'over';
+        banner(`⏳ দুজনই ৫ মিনিট খেলেননি, তাই ম্যাচ বাতিল হয়েছে।<br>৳${d.fee} (৫%) কেটে ৳${d.refund} আপনার ওয়ালেটে ফেরত দেওয়া হয়েছে। লবিতে নেওয়া হচ্ছে…`, 'lobby');
+        setTimeout(() => { location.href = '/'; }, 7000);
+      });
       socket.on('disputed', () => { finishUi(); banner('⚠️ দুই পক্ষের ফলাফল মেলেনি। অ্যাডমিন দেখা পর্যন্ত টাকা আটকে থাকবে।', 'lobby'); });
       socket.on('gameOver', d => {
         finishUi(); if (typeof G !== 'undefined' && G) G.phase = 'over';

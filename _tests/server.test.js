@@ -113,11 +113,52 @@ async function play(a, b, stake) {      // দুজনকে ম্যাচে
   const q1 = io.connect(u1.tk); q1.emit('joinQueue', { userId: u1.id, betAmount: 100 }); const wq = await post('/api/withdraw', { amount: 100, recipient_number: '01911111111', payment_method: 'bKash' }, u1.tk); ok(wq.status === 200 || wq.status === 400, 'কিউতে থাকাকালীন তোলা');
   const q2 = io.connect(u2.tk); q2.emit('joinQueue', { userId: u2.id, betAmount: 100 }); ok(!q2.last('matchStart') || (await bal(u1)) >= 0, 'ব্যালেন্স ঋণাত্মক হয়নি'); q1.disconnect(); q2.emit('leaveQueue'); q2.disconnect();
   console.log('▶ দুজনই অফলাইন → ম্যাচ বাতিল ও টাকা ফেরত');
-  bye(); const b1 = await bal(u1), b2 = await bal(u2); g = await play(u1, u2, 10); bye(); await sleep(900);
-  eq([await bal(u1), await bal(u2)], [b1, b2], 'আইডল ম্যাচ বাতিল, দুজনের ৳10 ফেরত');
+  bye(); const b1 = await bal(u1), b2 = await bal(u2); const comm0 = (await A('GET', '/admin/api/overview')).body.totalCommission;
+  g = await play(u1, u2, 10); bye(); await sleep(900);
+  eq([await bal(u1), await bal(u2)], [b1 - 1, b2 - 1], 'দুজনই অফলাইন ম্যাচ বাতিল: ৫% (৳10 → ৳1) কেটে বাকি ফেরত');
+  eq((await A('GET', '/admin/api/overview')).body.totalCommission, comm0 + 2, 'কাটা ৫% অ্যাডমিন কমিশনে গেছে');
+  console.log('▶ দুজনই অনলাইন কিন্তু কেউ খেলছে না → ৫% কেটে ফেরত ও লবিতে পাঠানো');
+  { const c1 = await bal(u1), c2 = await bal(u2); const ig = await play(u1, u2, 10); await sleep(2300);
+    eq([await bal(u1), await bal(u2)], [c1 - 1, c2 - 1], 'নিষ্ক্রিয় ম্যাচ বাতিল: ৫% (৳10 → ৳1) কেটে ফেরত');
+    ok(ig.ca.last('matchAbandoned') && ig.cb.last('matchAbandoned'), 'দুজনকেই matchAbandoned (লবিতে ফেরত) বার্তা গেছে');
+    ig.ca.emit('enterRoom', { roomId: ig.roomId }); const rc = ig.ca.last('roomClosed'); ok(rc && rc.idleFee === 1 && rc.refund === 9, 'পরে ঢুকলে ৫% কাটার তথ্যসহ roomClosed পায়'); bye();
+    const keep = await play(u1, u2, 10); for (let i = 0; i < 6; i++) { await sleep(400); keep.ca.emit('back', { roomId: keep.roomId }); }
+    ok(!keep.ca.last('matchAbandoned'), 'একজন সক্রিয় থাকলে ম্যাচ বাতিল হয় না'); keep.ca.emit('resign', { roomId: keep.roomId }); await sleep(100); bye(); }
   console.log('▶ একজন ফিরে এলে ম্যাচ চলে'); const b1b = await bal(u1); g = await play(u1, u2, 10); bye(); await sleep(150);
   const back = io.connect(u1.tk); CL.push(back); ok(back.last('matchActive'), 'ফিরলে চলমান ম্যাচে পাঠায়'); await sleep(600); eq(await bal(u1), b1b - 10, 'ফেরার পর ম্যাচ বাতিল হয়নি');
   back.emit('enterRoom', { roomId: g.roomId, resync: false }); ok(back.last('roomState') && Array.isArray(back.last('roomState').log), 'রিস্টার্ট/রিফ্রেশে পুরো লগ ফেরত পায়'); back.emit('resign', { roomId: g.roomId });
+  console.log('▶ অ্যাডমিন: ইউজার সার্চ, পাসওয়ার্ড রিকভারি, সাপোর্ট সেটিংস');
+  { const pu = await user('vault'), N = encodeURIComponent;
+    eq((await app.inject('GET', '/admin/api/users?q=vault')).status, 401, 'অ্যাডমিন ছাড়া ইউজার সার্চ → 401');
+    eq((await app.inject('GET', `/admin/api/user/${pu.id}/password`)).status, 401, 'অ্যাডমিন ছাড়া পাসওয়ার্ড দেখা যায় না');
+    const sr = (await A('GET', '/admin/api/users?q=' + N('vaul'))).body; ok(sr.length === 1 && sr[0].username === pu.name, 'আংশিক নামে সার্চে ইউজার পাওয়া যায়');
+    eq((await A('GET', '/admin/api/users?q=' + N(pu.name))).body[0].id, pu.id, 'পুরো ইউজারনেমে সার্চ');
+    eq((await A('GET', '/admin/api/users?q=' + N('%'))).body.length, 0, '% দিয়ে সব ইউজার টেনে আনা যায় না (ওয়াইল্ডকার্ড এস্কেপ)');
+    eq((await A('GET', `/admin/api/user/${pu.id}/password`)).body, { password: 'secret1' }, 'অ্যাডমিন ইউজারের পাসওয়ার্ড দেখতে পায়');
+    const raw = dbq().prepare('SELECT pw_enc FROM users WHERE id=?').pluck().get(pu.id); ok(raw && !raw.includes('secret1') && raw.startsWith('v1:'), 'ডাটাবেসে পাসওয়ার্ড এনক্রিপ্টেড, সাধারণ লেখা নয়');
+    await fund(pu, 50); const dt = (await A('GET', `/admin/api/user/${pu.id}`)).body;
+    ok(dt.user.username === pu.name && dt.user.balance === 50 && dt.user.pw_known === true && !('pw_enc' in dt.user) && !('password_hash' in dt.user), 'বিস্তারিতে ব্যালেন্স আছে, পাসওয়ার্ড/হ্যাশ লিক হয় না');
+    ok(dt.transactions.some(t => t.type === 'deposit' && t.amount === 50) && dt.totals.deposits === 50 && Array.isArray(dt.matches), 'বিস্তারিতে ট্রানজেকশন ইতিহাস ও মোট হিসাব');
+    eq((await A('GET', '/admin/api/user/999999')).status, 404, 'অচেনা ইউজার → 404');
+    // পুরনো ইউজার (পাসওয়ার্ড এনক্রিপ্ট সেভ নেই): প্রথমে "সেভ হয়নি", লগইন করলে সেভ হয়
+    dbq().prepare('UPDATE users SET pw_enc=NULL WHERE id=?').run(pu.id);
+    eq((await A('GET', `/admin/api/user/${pu.id}/password`)).status, 404, 'আগে সেভ না থাকলে পাসওয়ার্ড দেখানো যায় না (সৎ বার্তা)');
+    await post('/api/enter', { username: pu.name, password: 'secret1' }); eq((await A('GET', `/admin/api/user/${pu.id}/password`)).body.password, 'secret1', 'পরের লগইনে পাসওয়ার্ড সেভ হয়ে যায়');
+    // রিসেট
+    eq((await A('POST', `/admin/api/user/${pu.id}/password`)).status, 400, 'পাসওয়ার্ড ছাড়া রিসেট → 400');
+    eq((await app.inject('POST', `/admin/api/user/${pu.id}/password`, { headers: adm, body: { password: 'abc' } })).status, 400, 'ছোট পাসওয়ার্ড রিসেট → 400');
+    eq((await app.inject('POST', `/admin/api/user/${pu.id}/password`, { headers: adm, body: { password: 'newpass77' } })).status, 200, 'অ্যাডমিন নতুন পাসওয়ার্ড বসায়');
+    eq((await post('/api/enter', { username: pu.name, password: 'secret1' }, null, '4.4.4.4')).status, 401, 'পুরনো পাসওয়ার্ড আর চলে না');
+    eq((await post('/api/enter', { username: pu.name, password: 'newpass77' }, null, '4.4.4.5')).status, 200, 'নতুন পাসওয়ার্ডে লগইন হয়');
+    eq((await A('GET', `/admin/api/user/${pu.id}/password`)).body.password, 'newpass77', 'নতুন পাসওয়ার্ডই দেখায়');
+    ok(dbq().prepare("SELECT COUNT(*) FROM admin_audit WHERE action='view_password'").pluck().get() >= 3 && dbq().prepare("SELECT COUNT(*) FROM admin_audit WHERE action='reset_password'").pluck().get() >= 1, 'পাসওয়ার্ড দেখা/রিসেট অডিট লগে লেখা থাকে');
+    // সাপোর্ট
+    const c0 = (await get('/api/config')).body.support; eq(c0, { name: 'Support', telegram: 'na5yem' }, 'ডিফল্ট সাপোর্ট: টেলিগ্রাম na5yem');
+    eq((await app.inject('POST', '/admin/api/settings', { headers: adm, body: { name: 'Help Desk', telegram: 'bad name' } })).status, 400, 'ভুল টেলিগ্রাম ইউজারনেম → 400');
+    eq((await app.inject('POST', '/admin/api/settings', { headers: adm, body: { name: '', telegram: 'na5yem' } })).status, 400, 'খালি সাপোর্ট নাম → 400');
+    eq((await app.inject('POST', '/admin/api/settings', { headers: adm, body: { name: 'Help Desk', telegram: '@Nayem_Support' } })).body, { name: 'Help Desk', telegram: 'Nayem_Support' }, 'সাপোর্টের নাম ও টেলিগ্রাম বদলানো যায় (@ বাদ যায়)');
+    eq((await get('/api/config')).body.support, { name: 'Help Desk', telegram: 'Nayem_Support' }, 'লবি কনফিগে নতুন সাপোর্ট আসে');
+    await app.inject('POST', '/admin/api/settings', { headers: adm, body: { name: 'Support', telegram: 'na5yem' } }); }
   console.log('▶ মোট হিসাব মেলে কি? (জমা = ব্যালেন্স + কমিশন + উত্তোলন + লক)');
   const db = dbq(); const one = s => db.prepare(s).pluck().get() || 0;
   const dep = one("SELECT SUM(amount) FROM transactions WHERE type='deposit' AND status='approved'"), bals = one('SELECT SUM(balance) FROM users'), comm = one('SELECT total_commission FROM admin_wallet'),

@@ -18,10 +18,27 @@ th,td{padding:10px 16px;text-align:left;border-bottom:1px solid var(--bd);white-
 td.e{text-align:center;color:var(--mu);padding:24px}
 button{border:0;border-radius:8px;padding:6px 12px;color:#fff;cursor:pointer;font-weight:600;margin-right:6px}
 .a{background:var(--ok)}.r{background:var(--no)}button:disabled{opacity:.5}
+.pad{padding:14px 16px}input{padding:9px 11px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font:inherit;min-width:0}
+.fl{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.fl input{flex:1;min-width:160px}
+.b{background:var(--ac)}.g{background:#64748b}
+.hit{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--bd);border-radius:10px;margin-top:8px;cursor:pointer}.hit:hover{border-color:var(--ac)}.hit b{flex:1}
+.av{width:56px;height:56px;border-radius:50%;background:var(--bg) center/cover;border:2px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:24px;flex:none}.av.s{width:34px;height:34px;font-size:16px}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:12px 0}.kv div{background:var(--bg);border-radius:10px;padding:8px 10px}.kv span{display:block;color:var(--mu);font-size:11px}
+.pw{font:600 15px ui-monospace,monospace;background:var(--bg);padding:6px 10px;border-radius:8px;border:1px dashed var(--bd);min-width:120px;display:inline-block}
+.mut{color:var(--mu)}.pos{color:var(--ok)}.neg{color:var(--no)}
+button{transition:transform .12s,filter .15s,box-shadow .15s}button:not(:disabled):hover{filter:brightness(1.12);transform:translateY(-1px);box-shadow:0 4px 12px #0003}button:not(:disabled):active{transform:scale(.95)}
+.stat.click{cursor:pointer;border-color:var(--ac);transition:transform .12s,box-shadow .15s}.stat.click:hover{transform:translateY(-2px);box-shadow:0 6px 16px #0003}.stat.click span::after{content:' ▾ ক্লিক করুন';color:var(--ac)}
+.hr{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.hr a{color:var(--ac);font-weight:600;text-decoration:none}.hr button{margin:0}
+tr.ur{cursor:pointer}tr.ur:hover td{background:var(--bg)}
+@media(max-width:640px){header{flex-direction:column;align-items:flex-start;gap:8px;font-size:16px}main{padding:10px}th,td{padding:8px 10px}.stats{grid-template-columns:repeat(2,1fr);gap:8px}.stat b{font-size:18px}button{padding:8px 12px}h2{padding:10px 12px}.pad{padding:12px}}
+@media(min-width:1400px){main{max-width:1280px}}
 </style></head><body>
-<header><span>🎲 Ludo Admin</span><span><a href="/admin/api/backup" style="color:var(--ac);font-weight:600;margin-right:12px">💾 Download backup</a><small id="upd"></small></span></header>
+<header><span>🎲 Ludo Admin</span><span class="hr"><button class="b" id="pdfBtn">💾 Download backup (PDF)</button><a href="/admin/api/backup" title="ডাটাবেস ফাইল — সার্ভার রিস্টোরের জন্য">🗄 DB ফাইল</a><small id="upd"></small></span></header>
 <main>
 <div class="stats" id="stats"></div>
+<section id="allU" style="display:none"><h2 style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span id="allUt">👥 সব ইউজার</span><button class="g" id="allUx" style="margin:0">✖ বন্ধ</button></h2><div class="w" style="max-height:70vh;overflow:auto"><table style="min-width:520px"><thead><tr><th>#</th><th>ইউজারনেম</th><th>ব্যালেন্স</th><th>যোগ দিয়েছে</th><th>অবস্থা</th></tr></thead><tbody id="allUb"></tbody></table></div></section>
+<section id="srch"><h2>🔎 ইউজার খুঁজুন (ইউজারনেম দিয়ে)</h2><div class="pad"><div class="fl"><input id="q" placeholder="লেখা শুরু করলেই নিজে থেকে খুঁজবে — যেমন: nayem বা nayem_56748" autocomplete="off"><button class="b" id="qgo">Search</button></div><div id="hits"></div><div id="det"></div></div></section>
+<section><h2>💬 সাপোর্ট / টেলিগ্রাম সেটিংস</h2><div class="pad"><div class="fl"><input id="sName" placeholder="সাপোর্টের নাম (যেমন: Support)" maxlength="30"><input id="sTg" placeholder="টেলিগ্রাম ইউজারনেম (যেমন: na5yem)" maxlength="40"><button class="a" id="sSave">Save</button></div><div class="mut" style="margin-top:6px;font-size:12px">লবিতে ও লগইন পেজে ইউজাররা এই নামের বোতামে চাপ দিলে আপনার টেলিগ্রামে চ্যাট খুলবে।</div></div></section>
 <section><h2>⚠️ Disputed Matches (stakes on hold)</h2><div class="w"><table><thead><tr><th>Match</th><th>Players</th><th>Stake each</th><th>Details</th><th>Action</th></tr></thead><tbody id="dsp"></tbody></table></div></section>
 <section><h2>Pending Deposits</h2><div class="w"><table><thead><tr><th>ID</th><th>User</th><th>Method</th><th>Sender #</th><th>TrxID</th><th>Amount</th><th>Time</th><th>Action</th></tr></thead><tbody id="dep"></tbody></table></div></section>
 <section><h2>Pending Withdrawals</h2><div class="w"><table><thead><tr><th>ID</th><th>User</th><th>Method</th><th>Recipient #</th><th>Amount</th><th>Time</th><th>Action</th></tr></thead><tbody id="wd"></tbody></table></div></section>
@@ -37,7 +54,7 @@ async function load(){
   try{
     const [o,d,w,x]=await Promise.all([api('/admin/api/overview'),api('/admin/api/pending/deposit'),api('/admin/api/pending/withdraw'),api('/admin/api/disputes')]);
     const S=[['Total Platform Volume',tk(o.totalVolume)],['Platform Commission ('+(o.feePct||5)+'%)',tk(o.totalCommission)],['Active Games',o.activeGames],['Completed Matches',o.completedMatches],['Users',o.users],['User Wallet Liabilities',tk(o.userBalances)],['Disputed Matches',o.disputes],['Pending Deposits',o.pendingDeposits],['Pending Withdrawals',o.pendingWithdrawals]];
-    $('stats').innerHTML=S.map(([a,b])=>`<div class="stat"><span>${a}</span><b>${esc(b)}</b></div>`).join('');
+    $('stats').innerHTML=S.map(([a,b])=>`<div class="stat${a==='Users'?' click" id="tUsers" role="button" tabindex="0" title="সব ইউজারের তালিকা দেখুন':''}"><span>${a}</span><b>${esc(b)}</b></div>`).join('');
     $('dep').innerHTML=rows(d,t=>`<td>${t.id}</td><td>${esc(t.username)}</td><td>${esc(t.method)}</td><td>${esc(t.account_number)}</td><td><b>${esc(t.trx_id)}</b></td><td>${tk(t.amount)}</td><td>${ft(t.timestamp)}</td>`,'Approve');
     $('wd').innerHTML=rows(w,t=>`<td>${t.id}</td><td>${esc(t.username)}</td><td>${esc(t.method)}</td><td>${esc(t.account_number)}</td><td>${tk(t.amount)}</td><td>${ft(t.timestamp)}</td>`,'Mark as Paid');
     $('dsp').innerHTML=x.length?x.map(m=>`<tr><td>#${m.id}</td><td>P1: <b>${esc(m.p1)}</b><br>P2: <b>${esc(m.p2)}</b></td><td>${tk(m.bet_amount)}</td><td><small>${esc(m.note)}</small></td><td><button class="a" data-room="${esc(m.room_id)}" data-d="p1">P1 wins</button><button class="a" data-room="${esc(m.room_id)}" data-d="p2">P2 wins</button><button class="r" data-room="${esc(m.room_id)}" data-d="refund">Refund both</button></td></tr>`).join(''):'<tr><td class="e" colspan="5">No disputes</td></tr>';
@@ -54,5 +71,99 @@ document.addEventListener('click',async e=>{
   try{await api(`/admin/api/tx/${b.dataset.id}/${b.dataset.act}`,{method:'POST'})}catch(err){alert(err.message)}
   load();
 });
+
+// ── ইউজার সার্চ ও বিস্তারিত ──
+const TYPE={deposit:'জমা',withdraw:'উত্তোলন',bet_deduct:'এন্ট্রি ফি',bet_win:'পুরস্কার/ফেরত',commission:'কমিশন'};
+let curUser=null,pwT=null;
+const avEl=(a,c)=>`<div class="av ${c||''}" style="${a?`background-image:url(${esc(a)})`:''}">${a?'':'👤'}</div>`;
+async function search(){
+  const q=$('q').value.trim();$('det').innerHTML='';
+  try{const r=await api('/admin/api/users?q='+encodeURIComponent(q));
+    $('hits').innerHTML=r.length?r.map(u=>`<div class="hit" data-u="${u.id}">${avEl(null,'s')}<b>${esc(u.username)}</b><span>${tk(u.balance)}</span></div>`).join(''):'<div class="mut" style="margin-top:8px">কোনো ইউজার পাওয়া যায়নি</div>';
+    if(r.length===1)open1(r[0].id)}catch(e){$('hits').textContent='Error: '+e.message}}
+async function open1(id){
+  try{const d=await api('/admin/api/user/'+id);curUser=d.user;const u=d.user,t=d.totals;clearTimeout(pwT);
+    const K=[['ব্যালেন্স',tk(u.balance)],['মোট জমা',tk(t.deposits)],['মোট উত্তোলন',tk(t.withdrawals)],['ম্যাচ / জয়',t.matches+' / '+t.wins],['এন্ট্রি ফি দিয়েছে',tk(t.bets)],['পুরস্কার/ফেরত পেয়েছে',tk(t.winnings)],['যোগ দিয়েছে',ft(u.created_at)],['এখন',u.online?'🟢 অনলাইন':'⚪ অফলাইন']];
+    $('det').innerHTML=`<div style="margin-top:14px;border-top:1px solid var(--bd);padding-top:14px"><div class="fl">${avEl(u.avatar)}<div><b style="font-size:17px">${esc(u.username)}</b><div class="mut">ID #${u.id}</div></div></div>
+    <div class="kv">${K.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join('')}</div>
+    <div class="fl"><b>🔑 পাসওয়ার্ড:</b><span class="pw" id="pwv">••••••••</span><button class="b" id="pwShow">👁 দেখুন</button><button class="g" id="pwCopy" style="display:none">Copy</button><button class="r" id="pwSet">নতুন পাসওয়ার্ড দিন</button></div>
+    ${u.pw_known?'':'<div class="mut" style="font-size:12px;margin-top:4px">এই ইউজারের পাসওয়ার্ড এখনো সেভ হয়নি (সে একবার লগইন করলে সেভ হবে) — চাইলে নতুন পাসওয়ার্ড বসিয়ে দিন।</div>'}
+    <h3 style="margin:16px 0 6px;font-size:14px">🧾 লেনদেনের ইতিহাস (শেষ ${d.transactions.length}টি)</h3><div class="w"><table style="min-width:560px"><thead><tr><th>#</th><th>ধরন</th><th>টাকা</th><th>অবস্থা</th><th>মাধ্যম / TrxID / নাম্বার</th><th>সময়</th></tr></thead><tbody>${d.transactions.length?d.transactions.map(x=>{const plus=x.type==='deposit'||x.type==='bet_win';return`<tr><td>${x.id}</td><td>${esc(TYPE[x.type]||x.type)}</td><td class="${plus?'pos':'neg'}">${plus?'+':'-'}${tk(x.amount)}</td><td>${esc(x.status)}</td><td class="mut">${esc([x.method,x.trx_id,x.account_number].filter(Boolean).join(' · '))}</td><td>${ft(x.timestamp)}</td></tr>`}).join(''):'<tr><td class="e" colspan="6">কোনো লেনদেন নেই</td></tr>'}</tbody></table></div>
+    <h3 style="margin:16px 0 6px;font-size:14px">🎲 ম্যাচের ইতিহাস (শেষ ${d.matches.length}টি)</h3><div class="w"><table style="min-width:520px"><thead><tr><th>খেলোয়াড়</th><th>এন্ট্রি</th><th>ফল</th><th>সময়</th></tr></thead><tbody>${d.matches.length?d.matches.map(m=>`<tr><td>${esc(m.p1)} vs ${esc(m.p2)}</td><td>${tk(m.bet_amount)}</td><td>${m.disputed&&m.status==='ongoing'?'⚠️ বিরোধ':m.status==='ongoing'?'চলছে':m.winner==='me'?'<span class="pos">জিতেছে</span>':m.winner==='opp'?'<span class="neg">হেরেছে</span>':'ফেরত'}</td><td>${ft(m.timestamp)}</td></tr>`).join(''):'<tr><td class="e" colspan="4">কোনো ম্যাচ নেই</td></tr>'}</tbody></table></div></div>`;
+    $('det').scrollIntoView({behavior:'smooth',block:'nearest'})}catch(e){alert(e.message)}}
+
+document.addEventListener('click',async e=>{
+  const h=e.target.closest('.hit');if(h)return open1(+h.dataset.u);
+  if(e.target.id==='pwShow'&&curUser){try{const r=await api(`/admin/api/user/${curUser.id}/password`);$('pwv').textContent=r.password;$('pwCopy').style.display='';
+      clearTimeout(pwT);pwT=setTimeout(()=>{const v=$('pwv');if(v)v.textContent='••••••••';const c=$('pwCopy');if(c)c.style.display='none'},20000)}catch(err){alert(err.message)}}
+  if(e.target.id==='pwCopy'){try{await navigator.clipboard.writeText($('pwv').textContent);e.target.textContent='Copied ✓';setTimeout(()=>e.target.textContent='Copy',1500)}catch{}}
+  if(e.target.id==='pwSet'&&curUser){const p=prompt(`${curUser.username}-এর নতুন পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর):`);if(!p)return;
+    try{await api(`/admin/api/user/${curUser.id}/password`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:p})});alert('পাসওয়ার্ড বদলানো হয়েছে ✅');open1(curUser.id)}catch(err){alert(err.message)}}
+  if(e.target.id==='sSave'){try{const r=await api('/admin/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:$('sName').value,telegram:$('sTg').value})});$('sName').value=r.name;$('sTg').value=r.telegram;alert('সাপোর্ট সেটিংস সেভ হয়েছে ✅')}catch(err){alert(err.message)}}
+});
+api('/admin/api/settings').then(r=>{$('sName').value=r.name;$('sTg').value=r.telegram}).catch(()=>{});
+
+// ── অটো সার্চ: লিখতে লিখতেই ফল আসে ──
+let sT=null,sSeq=0;
+const searchAuto=async()=>{const my=++sSeq,q=$('q').value.trim();try{const r=await api('/admin/api/users?q='+encodeURIComponent(q));if(my!==sSeq)return;
+  $('det').innerHTML='';$('hits').innerHTML=r.length?r.map(u=>`<div class="hit" data-u="${u.id}">${avEl(null,'s')}<b>${esc(u.username)}</b><span>${tk(u.balance)}</span></div>`).join(''):'<div class="mut" style="margin-top:8px">কোনো ইউজার পাওয়া যায়নি</div>';
+  if(r.length===1&&q)open1(r[0].id)}catch(e){if(my===sSeq)$('hits').textContent='Error: '+e.message}};
+$('q').oninput=()=>{clearTimeout(sT);sT=setTimeout(searchAuto,220)};
+$('qgo').onclick=()=>{clearTimeout(sT);searchAuto()};$('q').onkeydown=e=>{if(e.key==='Enter'){clearTimeout(sT);searchAuto()}};
+
+// ── "Users" কার্ডে ক্লিক: ওপর থেকে নিচে ক্রমিক নম্বরসহ সব ইউজার ──
+async function showAllUsers(){try{const r=await api('/admin/api/users?all=1');$('allU').style.display='';$('allUt').textContent=`👥 সব ইউজার (${r.length} জন) — ওপর থেকে নিচে ক্রমানুসারে`;
+  $('allUb').innerHTML=r.length?r.map((u,i)=>`<tr class="ur" data-u="${u.id}"><td>${i+1}</td><td><b>${esc(u.username)}</b></td><td>${tk(u.balance)}</td><td>${ft(u.created_at)}</td><td>${u.online?'🟢 অনলাইন':'⚪ অফলাইন'}</td></tr>`).join(''):'<tr><td class="e" colspan="5">এখনো কোনো ইউজার নেই</td></tr>';
+  $('allU').scrollIntoView({behavior:'smooth',block:'start'})}catch(e){alert(e.message)}}
+document.addEventListener('click',e=>{
+  if(e.target.closest('#tUsers'))return showAllUsers();
+  if(e.target.closest('#allUx')){$('allU').style.display='none';return}
+  const r=e.target.closest('tr.ur');if(r){$('srch').scrollIntoView({behavior:'smooth',block:'start'});open1(+r.dataset.u)}});
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.id==='tUsers'){e.preventDefault();showAllUsers()}});
+
+// ── PDF ব্যাকআপ: সব তথ্য একটি PDF-এ (বাংলা ঠিকভাবে আসে; পাসওয়ার্ড বাদ)। কোনো বাইরের লাইব্রেরি লাগে না ──
+const BF='"Noto Sans Bengali","Hind Siliguri","Nirmala UI","Kalpurush",system-ui,sans-serif',tick=()=>new Promise(r=>setTimeout(r));
+const TL={deposit:'জমা',withdraw:'উত্তোলন',bet_deduct:'এন্ট্রি ফি',bet_win:'পুরস্কার/ফেরত',commission:'কমিশন'},STL={approved:'সম্পন্ন',pending:'অপেক্ষমাণ',rejected:'বাতিল',ongoing:'চলছে',completed:'শেষ',forfeited:'ফেরত/হার'};
+const dt=s=>{const d=new Date(String(s).replace(' ','T')+'Z');return isNaN(d)?String(s||''):d.toLocaleString('en-GB',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'})};
+function buildPdf(J){const enc=new TextEncoder(),parts=[],offs=[];let off=0;const push=b=>{if(typeof b==='string')b=enc.encode(b);parts.push(b);off+=b.length};
+  const n=J.length;push('%PDF-1.4\n');push(new Uint8Array([37,226,227,207,211,10]));
+  const obj=(id,fn)=>{offs[id]=off;push(id+' 0 obj\n');fn();push('endobj\n')};
+  obj(1,()=>push('<< /Type /Catalog /Pages 2 0 R >>\n'));
+  obj(2,()=>push('<< /Type /Pages /Kids ['+J.map((_,i)=>(5+3*i)+' 0 R').join(' ')+'] /Count '+n+' >>\n'));
+  J.forEach((j,i)=>{const im=3+3*i,ct=4+3*i,pg=5+3*i,cs='q 595.28 0 0 841.89 0 0 cm /Im0 Do Q';
+    obj(im,()=>{push(`<< /Type /XObject /Subtype /Image /Width ${j.w} /Height ${j.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${j.d.length} >>\nstream\n`);push(j.d);push('\nendstream\n')});
+    obj(ct,()=>push(`<< /Length ${cs.length} >>\nstream\n${cs}\nendstream\n`));
+    obj(pg,()=>push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /XObject << /Im0 ${im} 0 R >> >> /Contents ${ct} 0 R >>\n`))});
+  const N=3+3*n,xo=off;push(`xref\n0 ${N}\n0000000000 65535 f \n`);for(let i=1;i<N;i++)push(String(offs[i]).padStart(10,'0')+' 00000 n \n');
+  push(`trailer\n<< /Size ${N} /Root 1 0 R >>\nstartxref\n${xo}\n%%EOF\n`);return new Blob(parts,{type:'application/pdf'})}
+async function makePdf(onProg){
+  const d=await api('/admin/api/export'),PW=1240,PH=1754,M=80,RH=36,J=[];let cv,x,y,pn=0;
+  const flush=()=>{if(!cv)return;x.fillStyle='#777';x.font='20px '+BF;x.textAlign='center';x.fillText(`Ludo Cash — ব্যাকআপ রিপোর্ট · পৃষ্ঠা ${pn}`,PW/2,PH-36);
+    const u=cv.toDataURL('image/jpeg',.85).split(',')[1],b=atob(u),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);J.push({w:PW,h:PH,d:a})};
+  const page=()=>{flush();cv=document.createElement('canvas');cv.width=PW;cv.height=PH;x=cv.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,PW,PH);x.textBaseline='middle';x.textAlign='left';y=M;pn++};
+  const txt=(t,px,bold,col)=>{x.font=`${bold?'700 ':''}${px}px ${BF}`;x.fillStyle=col||'#111';x.textAlign='left';x.fillText(t,M,y+px/2);y+=px+14};
+  const clip=(t,w)=>{t=String(t??'');if(x.measureText(t).width<=w)return t;while(t.length>1&&x.measureText(t+'…').width>w)t=t.slice(0,-1);return t+'…'};
+  async function table(title,cols,rows,F=21){if(y>PH-M-200||!cv)page();else y+=18;txt(title,34,true);const W=PW-2*M,xs=[];let a=M;cols.forEach(c=>{xs.push(a);a+=c.w*W});
+    const head=()=>{x.fillStyle='#e8ecf4';x.fillRect(M,y,W,RH);x.fillStyle='#111';x.font='700 '+F+'px '+BF;cols.forEach((c,i)=>{x.textAlign=c.r?'right':'left';x.fillText(clip(c.h,c.w*W-14),c.r?xs[i]+c.w*W-8:xs[i]+8,y+RH/2)});y+=RH};
+    head();if(!rows.length){x.font='21px '+BF;x.fillStyle='#777';x.textAlign='left';x.fillText('কোনো তথ্য নেই',M+8,y+RH/2);y+=RH}
+    for(let k=0;k<rows.length;k++){if(y+RH>PH-M-30){page();head()}if(k%2){x.fillStyle='#f6f8fb';x.fillRect(M,y,W,RH)}
+      x.font=F+'px '+BF;x.fillStyle='#111';rows[k].forEach((v,i)=>{const c=cols[i],col=v&&v.c,t=v&&typeof v==='object'?v.t:v;x.fillStyle=col||'#111';x.textAlign=c.r?'right':'left';x.fillText(clip(t,c.w*W-14),c.r?xs[i]+c.w*W-8:xs[i]+8,y+RH/2)});
+      x.strokeStyle='#dde3ec';x.beginPath();x.moveTo(M,y+RH);x.lineTo(M+W,y+RH);x.stroke();y+=RH;if(k%25===0){onProg&&onProg(pn);await tick()}}}
+  const m=v=>'৳'+Number(v||0).toLocaleString('en-US');
+  page();txt('Ludo Cash — সম্পূর্ণ ব্যাকআপ রিপোর্ট',46,true);txt('তৈরি: '+new Date(d.generatedAt).toLocaleString('en-GB')+'   ·   নিরাপত্তার জন্য ইউজারের পাসওয়ার্ড এতে নেই',22,false,'#555');y+=10;
+  const sm=d.summary;[['মোট ইউজার',sm.users],['ইউজারদের মোট ব্যালেন্স (দায়)',m(sm.userBalances)],['প্ল্যাটফর্ম কমিশন (মোট)',m(sm.commission)],['মোট ম্যাচ ভলিউম',m(sm.volume)],['মোট ম্যাচ',sm.matches],['মোট লেনদেন',sm.transactions],['ফি %',d.feePct+'%'],['সাপোর্ট',d.settings.name+' (@'+d.settings.telegram+')']].forEach(([a,b])=>{x.font='26px '+BF;x.fillStyle='#444';x.textAlign='left';x.fillText(a,M,y+16);x.font='700 26px '+BF;x.fillStyle='#111';x.textAlign='right';x.fillText(String(b),PW-M,y+16);x.strokeStyle='#dde3ec';x.beginPath();x.moveTo(M,y+40);x.lineTo(PW-M,y+40);x.stroke();y+=48});
+  await table(`ইউজার তালিকা (${d.users.length} জন)`,[{h:'#',w:.07},{h:'ইউজারনেম',w:.4},{h:'ব্যালেন্স',w:.2,r:1},{h:'যোগ দিয়েছে',w:.33}],d.users.map((u,i)=>[i+1,u.username,m(u.balance),dt(u.created_at)]));
+  await table(`সব লেনদেন (${d.transactions.length}টি)`,[{h:'#',w:.05},{h:'ইউজার',w:.15},{h:'ধরন',w:.09},{h:'টাকা',w:.09,r:1},{h:'অবস্থা',w:.09},{h:'মাধ্যম',w:.14},{h:'TrxID / নাম্বার / নোট',w:.24},{h:'সময়',w:.15}],
+    d.transactions.map(t=>{const plus=t.type==='deposit'||t.type==='bet_win';return[t.id,t.username||'প্ল্যাটফর্ম',TL[t.type]||t.type,{t:(plus?'+':'-')+m(t.amount),c:plus?'#15803d':'#b91c1c'},STL[t.status]||t.status,t.method||'',[t.trx_id,t.account_number].filter(Boolean).join(' · ')||(t.note||''),dt(t.timestamp)]}),19);
+  await table(`সব ম্যাচ (${d.matches.length}টি)`,[{h:'#',w:.06},{h:'খেলোয়াড় ১',w:.2},{h:'খেলোয়াড় ২',w:.2},{h:'এন্ট্রি',w:.1,r:1},{h:'অবস্থা',w:.14},{h:'পুরস্কার',w:.1,r:1},{h:'সময়',w:.2}],
+    d.matches.map(t=>[t.id,t.p1,t.p2,m(t.bet_amount),(t.disputed&&t.status==='ongoing'?'বিরোধ':STL[t.status]||t.status),m(t.payout_amount),dt(t.timestamp)]));
+  await table('অ্যাডমিন অডিট লগ (শেষ ৫০০টি)',[{h:'#',w:.08},{h:'কাজ',w:.28},{h:'কার ইউজার',w:.3},{h:'আইপি',w:.16},{h:'সময়',w:.18}],d.audit.map(a=>[a.id,a.action,a.username||'',a.ip||'',dt(a.timestamp)]));
+  flush();onProg&&onProg(pn);return buildPdf(J)}
+$('pdfBtn').onclick=async()=>{const b=$('pdfBtn'),old=b.textContent;b.disabled=true;b.textContent='⏳ PDF বানানো হচ্ছে…';
+  try{const blob=await makePdf(p=>{b.textContent='⏳ PDF বানানো হচ্ছে… (পৃষ্ঠা '+p+')'});const a=document.createElement('a'),n=new Date(),z=v=>String(v).padStart(2,'0');
+    a.href=URL.createObjectURL(blob);a.download=`ludo-backup-${n.getFullYear()}-${z(n.getMonth()+1)}-${z(n.getDate())}-${z(n.getHours())}${z(n.getMinutes())}.pdf`;document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000);
+    b.textContent='✅ ডাউনলোড হয়েছে'}catch(e){alert('PDF হয়নি: '+e.message);b.textContent=old;b.disabled=false;return}
+  setTimeout(()=>{b.textContent=old;b.disabled=false},2500)};
+
 load();setInterval(load,5000);
 </script></body></html>

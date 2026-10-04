@@ -9,7 +9,9 @@ const STAKES = [10, 20, 30, 50, 100, 500], FEE_PCT = (+process.env.FEE_PCT > 0 &
 const TURN1_MS = 30000, TURN2_MS = 15000, BOT_MS = 1200;     // প্রথমবার ৩০ সেকেন্ড, এরপর ১৫ সেকেন্ড, তারপর বট
 const SINGLE_REPORT_MS = 5 * 60000, MIN_LOG = 80;            // প্রতিপক্ষ ফিরে না এলে একজনের রিপোর্টে ম্যাচ নিষ্পত্তির অপেক্ষা (0 = সবসময় অ্যাডমিন দেখবে)
 const MIN_DEP = 10, MIN_WD = 20;                              // সর্বনিম্ন জমা ৳10, সর্বনিম্ন উত্তোলন ৳20
-const IDLE_MS = +process.env.IDLE_MS || 15 * 60000;          // দুজনই ১৫ মিনিট অফলাইন থাকলে ম্যাচ বাতিল, দুজনের টাকাই ফেরত
+const IDLE_MS = +process.env.IDLE_MS || 5 * 60000;           // দুজনই ৫ মিনিট অফলাইন থাকলে ম্যাচ বাতিল; দুজনের এন্ট্রি ফি থেকে IDLE_FEE_PCT% কেটে বাকিটা ফেরত
+const INACTIVE_MS = +process.env.INACTIVE_MS || IDLE_MS;      // দুজনই অনলাইন কিন্তু ৫ মিনিট কেউ খেলেননি — একই নিয়ম
+const IDLE_FEE_PCT = (+process.env.IDLE_FEE_PCT >= 0 && process.env.IDLE_FEE_PCT !== undefined && process.env.IDLE_FEE_PCT !== '' && +process.env.IDLE_FEE_PCT < 50) ? +process.env.IDLE_FEE_PCT : 5;
 const ADMIN_USER = process.env.ADMIN_USER || 'admin';
 let ADMIN_PASS = process.env.ADMIN_PASS;
 if (!ADMIN_PASS) { ADMIN_PASS = crypto.randomBytes(9).toString('hex'); console.log(`[admin] ADMIN_PASS not set. Temporary password: ${ADMIN_PASS}`); }
@@ -25,6 +27,17 @@ const JWT_SECRET = process.env.JWT_SECRET || (fs.existsSync(secretFile) ? fs.rea
   (() => { const s = crypto.randomBytes(32).toString('hex'); fs.writeFileSync(secretFile, s, { mode: 0o600 }); return s; })());
 const sha = s => crypto.createHash('sha256').update(String(s)).digest();
 const safeEq = (a, b) => crypto.timingSafeEqual(sha(a), sha(b));
+
+// ───────────── পাসওয়ার্ড রিকভারি (শুধু অ্যাডমিনের জন্য) ─────────────
+// ইউজারের পাসওয়ার্ড AES-256-GCM দিয়ে এনক্রিপ্ট করে রাখা হয় (ডাটাবেসে সাধারণ লেখা হিসেবে নয়)। চাবি: PW_KEY (env) অথবা DATA_DIR/.pw_key ফাইল।
+// ⚠️ ভালো নিরাপত্তার জন্য PW_KEY env-এ দিন, যাতে ডাটাবেস ব্যাকআপ চুরি হলেও পাসওয়ার্ড খোলা না যায়।
+const pwKeyFile = path.join(DATA_DIR, '.pw_key');
+const PW_KEY = crypto.createHash('sha256').update(process.env.PW_KEY || (fs.existsSync(pwKeyFile) ? fs.readFileSync(pwKeyFile, 'utf8') :
+  (() => { const k = crypto.randomBytes(32).toString('hex'); fs.writeFileSync(pwKeyFile, k, { mode: 0o600 }); return k; })())).digest();
+const encPw = pw => { const iv = crypto.randomBytes(12), c = crypto.createCipheriv('aes-256-gcm', PW_KEY, iv), ct = Buffer.concat([c.update(String(pw), 'utf8'), c.final()]);
+  return 'v1:' + Buffer.concat([iv, c.getAuthTag(), ct]).toString('base64'); };
+const decPw = t => { try { if (!t || !t.startsWith('v1:')) return null; const b = Buffer.from(t.slice(3), 'base64'), d = crypto.createDecipheriv('aes-256-gcm', PW_KEY, b.subarray(0, 12));
+  d.setAuthTag(b.subarray(12, 28)); return Buffer.concat([d.update(b.subarray(28)), d.final()]).toString('utf8'); } catch { return null; } };
 
 // ───────────── Database ─────────────
 const db = new Database(path.join(DATA_DIR, 'ludo.db'));
@@ -53,6 +66,14 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_dep_trx ON transactions(trx_id) WHERE type=
 CREATE TABLE IF NOT EXISTS admin_wallet(id INTEGER PRIMARY KEY CHECK(id=1), total_commission INTEGER NOT NULL DEFAULT 0);
 INSERT OR IGNORE INTO admin_wallet(id) VALUES(1);`);
 try { db.exec('ALTER TABLE users ADD COLUMN avatar TEXT'); } catch (e) { /* already there */ }
+try { db.exec('ALTER TABLE users ADD COLUMN pw_enc TEXT'); } catch (e) { /* already there */ }
+db.exec(`CREATE TABLE IF NOT EXISTS settings(k TEXT PRIMARY KEY, v TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS admin_audit(id INTEGER PRIMARY KEY AUTOINCREMENT, action TEXT NOT NULL, user_id INTEGER, ip TEXT, timestamp TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);`);
+// সাপোর্ট যোগাযোগ (অ্যাডমিন প্যানেল থেকে বদলানো যায়): টেলিগ্রাম ইউজারনেম ও সাপোর্টের নাম
+const TG_RE = /^[A-Za-z][A-Za-z0-9_]{4,31}$/;
+const getSet = (k, d) => { const v = db.prepare('SELECT v FROM settings WHERE k=?').pluck().get(k); return v == null ? d : v; };
+const putSet = (k, v) => db.prepare('INSERT INTO settings(k,v) VALUES(?,?) ON CONFLICT(k) DO UPDATE SET v=excluded.v').run(k, v);
+const support = () => ({ name: getSet('support_name', 'Support'), telegram: getSet('support_telegram', 'na5yem') });
 for (const col of ['disputed INTEGER NOT NULL DEFAULT 0', 'note TEXT']) { try { db.exec('ALTER TABLE matches ADD COLUMN ' + col); } catch (e) { /* already there */ } }
 
 const app = express(), server = http.createServer(app);
@@ -91,15 +112,21 @@ const settle = db.transaction((roomId, winnerId, status) => {
   return { pay, comm, m };
 });
 // Refund: ongoing ম্যাচের দুজনের এন্ট্রি ফি ফেরত (idempotent — শুধু 'ongoing' ম্যাচে কাজ করে)
-const refundMatch = db.transaction((roomId, note = 'refund') => {
+// feePct > 0 হলে (শুধু "দুজনেই খেলেননি" ম্যাচে) প্রত্যেকের এন্ট্রি ফি থেকে ঐ % কেটে অ্যাডমিন কমিশনে যায়, বাকিটা ফেরত
+const refundMatch = db.transaction((roomId, note = 'refund', feePct = 0) => {
   const m = db.prepare("SELECT * FROM matches WHERE room_id=? AND status='ongoing'").get(roomId);
   if (!m) return null;
+  const fee = Math.ceil(m.bet_amount * feePct / 100), back = m.bet_amount - fee;   // ৳10-এর ৫% = ৳0.5 → পূর্ণ টাকায় ওপরে ধরা হয় (৳1)
   for (const u of [m.player1_id, m.player2_id]) {
-    db.prepare('UPDATE users SET balance=balance+? WHERE id=?').run(m.bet_amount, u);
-    addTx(u, 'bet_win', m.bet_amount, 'approved', { note: note + ' ' + roomId });
+    db.prepare('UPDATE users SET balance=balance+? WHERE id=?').run(back, u);
+    addTx(u, 'bet_win', back, 'approved', { note: note + ' ' + roomId });
   }
-  db.prepare("UPDATE matches SET status='forfeited' WHERE id=?").run(m.id);
-  return m;
+  if (fee > 0) {
+    db.prepare('UPDATE admin_wallet SET total_commission=total_commission+? WHERE id=1').run(fee * 2);
+    addTx(null, 'commission', fee * 2, 'approved', { note: note + ' fee ' + roomId });
+    db.prepare("UPDATE matches SET status='forfeited', commission_amount=?, note=? WHERE id=?").run(fee * 2, JSON.stringify({ reason: 'idle', fee, refund: back }), m.id);
+  } else db.prepare("UPDATE matches SET status='forfeited' WHERE id=?").run(m.id);
+  return { ...m, fee, back };
 });
 // Crash recovery: সার্ভার বন্ধ/রিস্টার্টের সময় যেসব ম্যাচ চলছিল (ও বিরোধে যায়নি) সেগুলোর টাকা ফেরত
 for (const m of db.prepare("SELECT room_id FROM matches WHERE status='ongoing' AND disputed=0").all()) refundMatch(m.room_id, 'refund');
@@ -123,7 +150,7 @@ setInterval(() => { for (const [k, v] of attempts) if (!v.some(t => Date.now() -
 const NAME_RE = /^[\p{L}\p{M}\p{N}]{2,12}_\d{5}$/u, AV_RE = /^data:image\/jpeg;base64,[A-Za-z0-9+/=]{100,60000}$/;
 const WEAK = /^(?:(.)\1+|123456\d*|0123456789|654321|987654321?|qwerty\w*|password\d*|abcdef\w*|iloveyou|asdfgh\w*)$/i;   // নতুন অ্যাকাউন্টে অতি সহজ পাসওয়ার্ড আটকায়
 const okAvatar = a => typeof a === 'string' && AV_RE.test(a);
-app.get('/api/config', (req, res) => res.json({ stakes: STAKES, feePct: FEE_PCT, minDep: MIN_DEP, minWd: MIN_WD, pay: PAY }));
+app.get('/api/config', (req, res) => res.json({ stakes: STAKES, feePct: FEE_PCT, minDep: MIN_DEP, minWd: MIN_WD, pay: PAY, support: support() }));
 app.post('/api/enter', (req, res) => {
   if (throttled(req.ip)) return res.status(429).json({ error: 'অনেকবার চেষ্টা করেছেন, ১ মিনিট পরে আবার চেষ্টা করুন' });
   const { username, password, fresh, avatar } = req.body || {}, name = String(username || '').trim();
@@ -136,13 +163,14 @@ app.post('/api/enter', (req, res) => {
     if (fresh) return res.status(409).json({ error: 'এই ইউজারনেমটি আগেই কেউ নিয়ে ফেলেছে। নতুন সংখ্যা দেওয়া হয়েছে, আবার চাপুন' });
     if (!bcrypt.compareSync(password, u.password_hash)) { badPw.get(name).push(Date.now()); return res.status(401).json({ error: 'ইউজারনেম বা পাসওয়ার্ড ভুল' }); }
     if (av) db.prepare('UPDATE users SET avatar=? WHERE id=?').run(av, u.id);
+    if (decPw(u.pw_enc) !== password) db.prepare('UPDATE users SET pw_enc=? WHERE id=?').run(encPw(password), u.id);   // পুরনো ইউজারেরও পরের লগইনে অ্যাডমিন-রিকভারির জন্য সেভ হয়
     return res.json({ token: sign(u), user: { id: u.id, username: u.username, balance: u.balance } });
   }
   if (!fresh) return res.status(404).json({ error: 'এই ইউজারনেমে কোনো অ্যাকাউন্ট নেই। শুধু নাম লিখলে নতুন অ্যাকাউন্ট খোলা হবে' });
   if (!NAME_RE.test(name)) return res.status(400).json({ error: 'নাম ২ থেকে ১২ অক্ষরের হতে হবে (শুধু অক্ষর বা সংখ্যা)' });
   if (WEAK.test(password)) return res.status(400).json({ error: 'এই পাসওয়ার্ডটি খুব সহজ (যেমন 123456), অন্য একটি দিন' });
   try {   // phone কলামটি পুরনো ডাটাবেসের জন্য আছে; এখন ইউজারনেমই বসানো হয়
-    const id = db.prepare('INSERT INTO users(username,phone,password_hash,avatar) VALUES(?,?,?,?)').run(name, name, bcrypt.hashSync(password, 10), av).lastInsertRowid;
+    const id = db.prepare('INSERT INTO users(username,phone,password_hash,avatar,pw_enc) VALUES(?,?,?,?,?)').run(name, name, bcrypt.hashSync(password, 10), av, encPw(password)).lastInsertRowid;
     res.json({ token: sign({ id }), user: { id, username: name, balance: 0 } });
   } catch (e) { res.status(409).json({ error: 'এই ইউজারনেমটি আগেই কেউ নিয়ে ফেলেছে। নতুন সংখ্যা দেওয়া হয়েছে, আবার চাপুন' }); }
 });
@@ -194,6 +222,20 @@ app.get('/admin', adminAuth, (req, res) => res.sendFile(path.join(__dirname, 'ad
 app.get('/admin/api/backup', adminAuth, async (req, res) => {
   try { const f = await backupNow('manual'); res.download(f); } catch (e) { res.status(500).json({ error: 'ব্যাকআপ হয়নি' }); }
 });
+// PDF ব্যাকআপের ডাটা: সবকিছু (পাসওয়ার্ড ছাড়া)। PDF ব্রাউজারেই বানানো হয়, যাতে বাংলা অক্ষর ঠিকঠাক আসে।
+app.get('/admin/api/export', adminAuth, (req, res) => {
+  const all = sql => db.prepare(sql).all(), one = sql => db.prepare(sql).pluck().get() || 0;
+  res.json({
+    generatedAt: new Date().toISOString(), feePct: FEE_PCT,
+    summary: { users: one('SELECT COUNT(*) FROM users'), userBalances: one('SELECT SUM(balance) FROM users'), commission: one('SELECT total_commission FROM admin_wallet WHERE id=1'),
+      volume: one("SELECT SUM(bet_amount*2) FROM matches WHERE status!='ongoing'"), matches: one('SELECT COUNT(*) FROM matches'), transactions: one('SELECT COUNT(*) FROM transactions') },
+    users: all('SELECT id,username,balance,created_at FROM users ORDER BY id'),
+    transactions: all('SELECT t.id,t.user_id,u.username,t.type,t.amount,t.status,t.method,t.trx_id,t.account_number,t.note,t.timestamp FROM transactions t LEFT JOIN users u ON u.id=t.user_id ORDER BY t.id'),
+    matches: all('SELECT m.id,m.room_id,u1.username AS p1,u2.username AS p2,m.bet_amount,m.status,m.disputed,m.winner_id,m.commission_amount,m.payout_amount,m.timestamp FROM matches m JOIN users u1 ON u1.id=m.player1_id JOIN users u2 ON u2.id=m.player2_id ORDER BY m.id'),
+    audit: all('SELECT a.id,a.action,u.username,a.ip,a.timestamp FROM admin_audit a LEFT JOIN users u ON u.id=a.user_id ORDER BY a.id DESC LIMIT 500'),
+    settings: support(),
+  });
+});
 app.get('/admin/api/overview', adminAuth, (req, res) => {
   const one = (sql) => db.prepare(sql).pluck().get() || 0;
   res.json({
@@ -243,6 +285,47 @@ app.post('/admin/api/dispute/:room/:action', adminAuth, (req, res) => {
   if (!m) return res.status(404).json({ error: 'Not found or already resolved' });
   pushWallet(m.player1_id); pushWallet(m.player2_id); res.json({ ok: true });
 });
+// ── ইউজার খোঁজা, বিস্তারিত, পাসওয়ার্ড দেখা/রিসেট, সাপোর্ট সেটিংস ──
+const audit = (action, uid, req) => db.prepare('INSERT INTO admin_audit(action,user_id,ip) VALUES(?,?,?)').run(action, uid || null, req.ip || null);
+app.get('/admin/api/users', adminAuth, (req, res) => {
+  if (req.query.all) {   // "Users" কার্ডে ক্লিক: সব ইউজার, ১ নম্বর থেকে ক্রমানুসারে (যে আগে যোগ দিয়েছে সে ওপরে)
+    return res.json(db.prepare('SELECT id,username,balance,created_at FROM users ORDER BY id ASC').all().map(u => ({ ...u, online: userSockets.has(u.id) })));
+  }
+  const q = String(req.query.q || '').trim().slice(0, 40).replace(/[%_\\]/g, m => '\\' + m);
+  const rows = db.prepare(`SELECT id,username,balance,created_at,avatar IS NOT NULL AS has_av FROM users WHERE username LIKE ? ESCAPE '\\' ORDER BY (username=?) DESC, id DESC LIMIT 30`).all('%' + q + '%', String(req.query.q || '').trim());
+  res.json(rows);
+});
+app.get('/admin/api/user/:id', adminAuth, (req, res) => {
+  const id = +req.params.id, u = db.prepare('SELECT id,username,balance,avatar,created_at,pw_enc IS NOT NULL AS pw_known FROM users WHERE id=?').get(id);
+  if (!u) return res.status(404).json({ error: 'ইউজার পাওয়া যায়নি' });
+  const sum = t => db.prepare("SELECT COALESCE(SUM(amount),0) FROM transactions WHERE user_id=? AND type=? AND status='approved'").pluck().get(id, t);
+  const matches = db.prepare(`SELECT m.room_id,m.bet_amount,m.status,m.winner_id,m.payout_amount,m.disputed,m.timestamp,u1.username AS p1,u2.username AS p2
+    FROM matches m JOIN users u1 ON u1.id=m.player1_id JOIN users u2 ON u2.id=m.player2_id WHERE m.player1_id=? OR m.player2_id=? ORDER BY m.id DESC LIMIT 50`).all(id, id);
+  res.json({ user: { ...u, pw_known: !!u.pw_known, online: userSockets.has(id) },
+    totals: { deposits: sum('deposit'), withdrawals: sum('withdraw'), bets: sum('bet_deduct'), winnings: sum('bet_win'), matches: db.prepare('SELECT COUNT(*) FROM matches WHERE player1_id=? OR player2_id=?').pluck().get(id, id), wins: db.prepare('SELECT COUNT(*) FROM matches WHERE winner_id=?').pluck().get(id) },
+    transactions: db.prepare('SELECT id,type,amount,status,method,trx_id,account_number,note,timestamp FROM transactions WHERE user_id=? ORDER BY id DESC LIMIT 200').all(id),
+    matches: matches.map(m => ({ ...m, winner: m.winner_id === null ? null : (m.winner_id === id ? 'me' : 'opp') })) });
+});
+app.get('/admin/api/user/:id/password', adminAuth, (req, res) => {   // আলাদা ক্লিকে দেখানো হয় + অডিট লগে লেখা থাকে
+  const id = +req.params.id, enc = db.prepare('SELECT pw_enc FROM users WHERE id=?').pluck().get(id);
+  if (enc === undefined) return res.status(404).json({ error: 'ইউজার পাওয়া যায়নি' });
+  const pw = decPw(enc); audit('view_password', id, req);
+  if (pw === null) return res.status(404).json({ error: 'এই ইউজারের পাসওয়ার্ড এখনো সেভ হয়নি (সে একবার লগইন করলে সেভ হবে)। দরকার হলে নিচ থেকে নতুন পাসওয়ার্ড দিন।' });
+  res.json({ password: pw });
+});
+app.post('/admin/api/user/:id/password', adminAuth, (req, res) => {  // পুরনো/অজানা পাসওয়ার্ডের ক্ষেত্রে অ্যাডমিন নতুন পাসওয়ার্ড বসাতে পারবে
+  const id = +req.params.id, pw = (req.body || {}).password;
+  if (typeof pw !== 'string' || pw.length < 6 || pw.length > 72) return res.status(400).json({ error: 'পাসওয়ার্ড ৬ থেকে ৭২ অক্ষরের হতে হবে' });
+  if (!db.prepare('UPDATE users SET password_hash=?, pw_enc=? WHERE id=?').run(bcrypt.hashSync(pw, 10), encPw(pw), id).changes) return res.status(404).json({ error: 'ইউজার পাওয়া যায়নি' });
+  badPw.delete(db.prepare('SELECT username FROM users WHERE id=?').pluck().get(id)); audit('reset_password', id, req); res.json({ ok: true });
+});
+app.get('/admin/api/settings', adminAuth, (req, res) => res.json(support()));
+app.post('/admin/api/settings', adminAuth, (req, res) => {
+  const { name, telegram } = req.body || {}, n = String(name ?? '').trim(), t = String(telegram ?? '').trim().replace(/^@/, '').replace(/^https?:\/\/t\.me\//i, '');
+  if (!n || n.length > 30) return res.status(400).json({ error: 'সাপোর্টের নাম ১ থেকে ৩০ অক্ষরের হতে হবে' });
+  if (!TG_RE.test(t)) return res.status(400).json({ error: 'টেলিগ্রাম ইউজারনেম ঠিক নয় (৫–৩২ অক্ষর, ইংরেজি অক্ষর/সংখ্যা/_)' });
+  putSet('support_name', n); putSet('support_telegram', t); res.json(support());
+});
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ───────────── Match rooms: lockstep relay ─────────────
@@ -251,6 +334,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 //  • it relays every player action in one ordered log (also used to resume after a refresh / net drop)
 //  • it only pays out when BOTH browsers report the same winner; a mismatch freezes the stakes for admin review
 const COLORS = [0, 2], CARD_KEYS = ['back3', 'fwd1', 'setme', 'setopp', 'shield'], EMOJIS = ['😂', '😎', '😡', '😭', '👏', '🔥', '🤯', '😈', '🙏', '💀'];
+const idleInfo = m => { try { const n = JSON.parse(m.note || 'null'); return n && n.reason === 'idle' ? { idleFee: n.fee, refund: n.refund } : {}; } catch { return {}; } };
 const rooms = new Map(), userRoom = new Map(), queues = new Map(STAKES.map(s => [s, []]));
 const other = (R, uid) => R.order.find(u => u !== uid);
 const okInt = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
@@ -264,6 +348,12 @@ function validAct(a) {
     [x.pl, x.opp].every(c => c === undefined || COLORS.includes(c));
 }
 function release(R) { R.over = true; clearTimeout(R.resT); clearTimeout(R.turnT); clearTimeout(R.idleT); R.order.forEach(u => userRoom.delete(u)); rooms.delete(R.id); }
+// দুজনই অফলাইন বা দুজনই ৫ মিনিট খেলেননি: ম্যাচ বাতিল, ৫% কেটে বাকি টাকা ফেরত, দুজনকেই লবিতে ফেরত পাঠানো হয়
+function abandon(R, why) {
+  if (R.over) return; release(R);
+  let res = null; try { res = refundMatch(R.id, 'idle refund', IDLE_FEE_PCT); } catch (e) { console.error('refund failed', e); }
+  R.order.forEach(u => { pushWallet(u); io.to('user:' + u).emit('matchAbandoned', { roomId: R.id, why, bet: R.bet, fee: res ? res.fee : 0, refund: res ? res.back : 0 }); });
+}
 const colorUser = (R, c) => R.order.find(u => R.players[u].color === c);
 const tmView = R => ({ c: R.tm.c, seq: R.tm.seq, ms: Math.max(0, R.tm.ms - (Date.now() - R.tm.t0)) });
 // রুলস: প্রথমবার ৩০ সেকেন্ডে চাল না দিলে চাল পরের জনের কাছে যায়। এরপর চাল পেলে ১৫ সেকেন্ড; আবার না দিলে (নেট সমস্যা/বেরিয়ে গেলে ইত্যাদি) সহজ বট তার হয়ে খেলে।
@@ -312,7 +402,7 @@ function tryMatch(bet) {
     }
     const info = id => db.prepare('SELECT username,avatar FROM users WHERE id=?').get(id);
     const R = { id: roomId, bet, order: [a, b], over: false, log: [], rnd: [], first: {}, tm: null, seed: crypto.randomInt(2 ** 31),
-      players: { [a]: { color: 0, ...info(a), connected: true, strikes: 0, bot: false }, [b]: { color: 2, ...info(b), connected: true, strikes: 0, bot: false } } };
+      players: { [a]: { color: 0, ...info(a), connected: true, strikes: 0, bot: false, lastAct: Date.now() }, [b]: { color: 2, ...info(b), connected: true, strikes: 0, bot: false, lastAct: Date.now() } } };
     rooms.set(roomId, R); R.order.forEach(u => userRoom.set(u, roomId));
     for (const [me, op] of [[a, b], [b, a]]) {
       pushWallet(me);
@@ -352,16 +442,16 @@ io.on('connection', socket => {
     if (!R) {                                                       // match already finished: tell this player how it ended
       const m = db.prepare('SELECT * FROM matches WHERE room_id=?').get(String(roomId));
       return socket.emit('roomClosed', m && (m.player1_id === uid || m.player2_id === uid)
-        ? { me: uid, winnerId: m.winner_id, payout: m.payout_amount, bet: m.bet_amount, disputed: !!m.disputed } : {});
+        ? { me: uid, winnerId: m.winner_id, payout: m.payout_amount, bet: m.bet_amount, disputed: !!m.disputed, ...idleInfo(m) } : {});
     }
-    if (!resync) comeBack(R, uid);                                  // পেজ খুললে/নেট ফিরলে বট থামে
+    if (!resync) { R.players[uid].lastAct = Date.now(); comeBack(R, uid); }   // পেজ খুললে/নেট ফিরলে বট থামে
     socket.join(roomId);
     socket.emit('roomState', { roomId, bet: R.bet, fee: FEE_PCT, me: uid, log: R.log, seed: R.seed,
       bots: R.order.filter(u => R.players[u].bot).map(u => R.players[u].color),
       players: R.order.map(u => ({ id: u, username: R.players[u].username, avatar: R.players[u].avatar || null, color: R.players[u].color })) });
     if (R.tm && R.tm.seq === R.log.length) socket.emit('turnTimer', tmView(R));
   });
-  socket.on('back', ({ roomId } = {}) => { const R = mine(roomId); if (R) comeBack(R, uid); });   // "আমি ফিরেছি" বোতাম
+  socket.on('back', ({ roomId } = {}) => { const R = mine(roomId); if (R) { R.players[uid].lastAct = Date.now(); comeBack(R, uid); } });   // "আমি ফিরেছি" বোতাম
   socket.on('resign', ({ roomId } = {}) => { const R = mine(roomId); if (R) finish(R, other(R, uid), 'forfeited'); });   // নিজে থেকে বেরিয়ে গেলে হার
   socket.on('act', ({ roomId, a } = {}) => {                       // a player action → ordered log → both browsers
     const R = mine(roomId); if (!R || !validAct(a) || R.log.length >= 20000) return;
@@ -369,7 +459,7 @@ io.on('connection', socket => {
     if (a.t === 'move') c.i = a.i;
     if (a.t === 'roll') R.lastRoller = R.players[uid].color;
     if (a.t === 'card') { c.k = a.k; c.a = {}; for (const f of ['val', 'i', 'pl', 'opp']) if ((a.a || {})[f] !== undefined) c.a[f] = a.a[f]; }
-    const p = R.players[uid]; p.strikes = 0;
+    const p = R.players[uid]; p.strikes = 0; p.lastAct = Date.now();
     if (p.bot) { p.bot = false; io.to(R.id).emit('botMode', { c: p.color, on: false }); }
     pushLog(R, uid, c);
   });
@@ -395,7 +485,7 @@ io.on('connection', socket => {
   // Emoji: only the sender's own screen can send it; it is relayed to the whole room and spreads over both screens.
   socket.on('emoji', ({ roomId, e } = {}) => {
     const R = mine(roomId); if (!R || !EMOJIS.includes(e)) return;
-    const p = R.players[uid]; if (Date.now() - (p.lastEmo || 0) < 1500) return; p.lastEmo = Date.now();
+    const p = R.players[uid]; if (Date.now() - (p.lastEmo || 0) < 1500) return; p.lastEmo = Date.now(); p.lastAct = Date.now();
     io.to(roomId).emit('emoji', { c: p.color, name: p.username, e });
   });
   socket.on('result', ({ roomId, winnerColor } = {}) => {          // দুই ব্রাউজারকেই একই বিজয়ী জানাতে হবে
@@ -431,12 +521,19 @@ io.on('connection', socket => {
       clearTimeout(R.idleT);
       R.idleT = setTimeout(() => {
         if (R.over || R.order.some(u => R.players[u].connected)) return;
-        release(R); try { refundMatch(R.id, 'idle refund'); } catch (e) { console.error('refund failed', e); }
-        R.order.forEach(pushWallet);
+        abandon(R, 'offline');
       }, IDLE_MS);
     }
   });
 });
+
+// দুজনই অনলাইন আছে কিন্তু INACTIVE_MS (৫ মিনিট) কেউ কোনো চাল/বোতাম চাপেননি → একই নিয়মে বাতিল (ফলাফল জমা পড়া ম্যাচ বাদ)
+setInterval(() => {
+  for (const R of [...rooms.values()]) {
+    if (R.over || R.order.some(u => R.players[u].report !== undefined)) continue;
+    if (R.order.every(u => Date.now() - R.players[u].lastAct >= INACTIVE_MS)) abandon(R, 'inactive');
+  }
+}, Math.max(100, Math.min(10000, INACTIVE_MS / 4))).unref();
 
 server.listen(PORT, () => {
   console.log(`Ludo server → http://localhost:${PORT}   Admin → http://localhost:${PORT}/admin (user: ${ADMIN_USER})`);

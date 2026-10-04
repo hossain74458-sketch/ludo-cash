@@ -14,7 +14,7 @@ function express() {
       if (l.method && l.method !== req.method) return next(); const pr = match(l.p, req.path); if (pr === null) return next(); req.params = pr; try { l.fn(req, res, next); } catch (e) { res.status(500).send(String(e.stack)); } }; next(); };
   app.inject = (method, url, { headers = {}, body, ip = '1.1.1.1' } = {}) => new Promise(resolve => {
     const h = Object.fromEntries(Object.entries(headers).map(([k, v]) => [k.toLowerCase(), v]));
-    const req = { method, url, path: url.split('?')[0], headers: h, body: body === undefined ? undefined : JSON.parse(JSON.stringify(body)), ip: settings['trust proxy'] && h['x-forwarded-for'] ? h['x-forwarded-for'].split(',')[0].trim() : ip };
+    const req = { method, url, path: url.split('?')[0], query: Object.fromEntries(new URLSearchParams(url.split('?')[1] || '')), headers: h, body: body === undefined ? undefined : JSON.parse(JSON.stringify(body)), ip: settings['trust proxy'] && h['x-forwarded-for'] ? h['x-forwarded-for'].split(',')[0].trim() : ip };
     const out = { status: 200, headers: {}, body: null }, done = b => { out.body = b; resolve(out); };
     const res = { status(c) { out.status = c; return this; }, set(k, v) { out.headers[String(k).toLowerCase()] = v; return this; },
       json(o) { out.headers['content-type'] = 'application/json'; done(JSON.parse(JSON.stringify(o))); }, send(s) { done(s); }, end() { done(null); },
