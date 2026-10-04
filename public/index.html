@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>লুডো ক্যাশ</title>
+<meta name="theme-color" content="#14121f"><link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" href="/icons/icon-192.png"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ludo Cash"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script src="/socket.io/socket.io.js"></script>
+<style>
+:root{--bg:#14121f;--card:#221f35;--bd:#3b3659;--tx:#f1eefc;--mu:#9d97bd;--ac:#e53935;--ok:#22c55e;--gold:#ffd54f}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% 0,#2c2748,var(--bg));color:var(--tx);font:15px/1.5 "Noto Sans Bengali","Hind Siliguri","Nirmala UI","Kalpurush",system-ui,sans-serif;min-height:100vh;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+.wrap{max-width:520px;margin:0 auto;padding:14px}.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:16px;margin-bottom:14px}
+h1{margin:6px 0 14px;text-align:center}h3{margin:0 0 10px}input,select{width:100%;padding:11px;margin:5px 0;border-radius:10px;border:1px solid var(--bd);background:#16142a;color:var(--tx);font-size:15px;font-family:inherit}
+button{border:0;border-radius:10px;padding:11px 14px;font-size:15px;font-weight:700;color:#fff;background:var(--ac);cursor:pointer;font-family:inherit}button.s{background:#3b3659}button.ok{background:var(--ok)}button:disabled{opacity:.5}
+.row{display:flex;gap:8px}.row>*{flex:1}.bal{text-align:center;font-size:34px;font-weight:800;color:var(--gold)}.bal small{display:block;font-size:12px;color:var(--mu);font-weight:400}
+.stakes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}.stake{padding:14px 4px;border:2px solid var(--bd);border-radius:12px;text-align:center;cursor:pointer;background:#16142a}
+.stake.on{border-color:var(--gold);background:#3a3216}.stake b{font-size:18px;display:block}.stake small{color:var(--mu)}
+.tabs{display:flex;gap:6px;margin-bottom:10px}.tabs button{flex:1;background:#3b3659}.tabs button.on{background:var(--ac)}
+.note{font-size:12px;color:var(--mu);margin:4px 0}table{width:100%;font-size:12px;border-collapse:collapse}td{padding:6px 4px;border-bottom:1px solid var(--bd)}
+.prev{min-height:22px;margin:2px 2px 4px;font-size:14px;color:var(--gold)}
+.pic{display:flex;align-items:center;gap:12px;margin:6px 0}.pic input{display:none}
+.av{width:64px;height:64px;border-radius:50%;background:#16142a center/cover;border:2px solid var(--bd);flex:none;display:flex;align-items:center;justify-content:center;font-size:26px}
+.av.sm{width:44px;height:44px;font-size:20px;flex:none}
+.live{display:flex;flex-direction:column;gap:8px;margin:8px 0}.lrow{display:flex;align-items:center;gap:10px;padding:10px 12px;border:2px solid var(--bd);border-radius:12px;background:#16142a}
+.lrow b{flex:1}.lrow small{display:block;color:var(--mu);font-weight:400}.badge{min-width:28px;height:28px;padding:0 8px;border-radius:14px;background:var(--ok);color:#06240f;font-weight:800;display:flex;align-items:center;justify-content:center}
+.lrow button{padding:8px 12px}.empty{color:var(--mu);font-size:13px;padding:6px 2px}
+.inst{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#2a2550,#3a1f3d);border:1px solid var(--gold);border-radius:14px;padding:10px 12px;margin-bottom:14px}
+.inst img{width:44px;height:44px;border-radius:10px;flex:none}.inst div{flex:1;font-size:13px;line-height:1.35}.inst b{display:block;font-size:15px}
+.inst button{background:var(--gold);color:#2a1d00;flex:none;padding:10px 14px}
+#iosHelp{position:fixed;inset:0;background:#000c;z-index:30;display:none;align-items:center;justify-content:center;padding:20px}
+#iosHelp .card{max-width:380px;line-height:1.8;margin:0}
+.p{color:#fbbf24}.a{color:var(--ok)}.r{color:#f87171}.hide{display:none!important}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#000e;padding:10px 16px;border-radius:20px;z-index:20;display:none;max-width:90vw;text-align:center}
+</style></head><body>
+<div id="toast"></div>
+<div id="iosHelp"><div class="card"><h3>📲 অ্যাপ ইনস্টল করুন</h3><div id="iosTxt"></div><button class="s" style="width:100%;margin-top:10px" onclick="document.getElementById('iosHelp').style.display='none'">বুঝেছি</button></div></div>
+<div class="wrap" id="instWrap" style="padding-bottom:0;display:none"><div class="inst"><img src="/icons/icon-192.png" alt=""><div><b>Ludo Cash অ্যাপ</b>ফোনের হোম স্ক্রিনে আইকন বসান, অ্যাপের মতো খুলবে</div><button id="installBtn">📲 Install App</button></div></div>
+
+<div id="auth" class="wrap">
+  <h1>🎲 লুডো ক্যাশ</h1>
+  <div class="card">
+    <h3>খেলতে প্রবেশ করুন</h3>
+    <form id="af" autocomplete="on">
+      <input id="aName" name="username" placeholder="আপনার নাম লিখুন" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
+      <div class="prev" id="uPrev"></div>
+      <input id="aPass" name="password" type="password" placeholder="পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)" autocomplete="current-password">
+      <div class="pic"><div class="av" id="aAv">👤</div>
+        <label class="note" style="flex:1;cursor:pointer"><span style="display:inline-block;background:#3b3659;color:#fff;padding:9px 14px;border-radius:10px;font-weight:700;font-size:14px">📷 ছবি আপলোড করুন</span>
+          <input id="aFile" type="file" accept="image/*"><div id="aFileNote">ঐচ্ছিক। গেমে আপনার ছবি দেখা যাবে। বড় ছবি দিলেও নিজে থেকে ছোট ও কম্প্রেস হয়ে যাবে।</div></label></div>
+      <button type="submit" id="aGo" style="width:100%;margin-top:8px">প্রবেশ করুন</button>
+    </form>
+    <div class="note">আপনার নামের পেছনে নিজে থেকেই একটি সংখ্যা যুক্ত হয়ে ইউজারনেম তৈরি হবে। প্রবেশের পর ব্রাউজার পাসওয়ার্ড সেভ করার অপশন দেখালে "সেভ" চাপুন — পরের বার নিজে থেকেই ভরে যাবে। আগের অ্যাকাউন্টে ঢুকতে পুরো ইউজারনেম লিখুন (যেমন: nayem_56748)।</div>
+  </div>
+</div>
+
+<div id="lobby" class="wrap hide">
+  <div class="card"><div class="row" style="align-items:center"><div style="display:flex;align-items:center;gap:10px"><label class="av sm" id="uav" style="cursor:pointer" title="ছবি বদলান">👤<input id="uFile" type="file" accept="image/*" style="display:none"></label><b id="uname"></b></div><button class="s" id="out" style="flex:none">লগআউট</button></div>
+    <div class="bal"><small>ওয়ালেট ব্যালেন্স</small>৳<span id="bal">0</span></div></div>
+
+  <div class="card"><h3>🟢 এখন যেসব গেম অপেক্ষায় আছে</h3><div class="note">কেউ এন্ট্রি দিয়ে প্রতিপক্ষের জন্য অপেক্ষা করলে এখানে সাথে সাথে দেখা যাবে। সংখ্যা মানে কতজন অপেক্ষায়। "খেলুন" চাপলেই সরাসরি ম্যাচ শুরু।</div><div class="live" id="live"></div></div>
+
+  <div class="card"><h3>⚔️ নতুন গেম দিন</h3>
+    <div class="stakes" id="stakes"></div>
+    <div class="note" id="prizeNote"></div>
+    <button id="play" style="width:100%">ম্যাচ খুঁজুন</button>
+    <button id="cancelQ" class="s hide" style="width:100%">⏳ প্রতিপক্ষ খোঁজা হচ্ছে… (বাতিল করুন)</button></div>
+
+  <div class="card"><div class="tabs"><button id="tDep" class="on">টাকা জমা</button><button id="tWd">টাকা তোলা</button></div>
+    <div id="pDep">
+      <div class="note" id="payInfo"></div>
+      <select id="dM"><option value="bKash Personal">বিকাশ পার্সোনাল</option><option value="bKash Agent">বিকাশ এজেন্ট</option><option value="Nagad Personal">নগদ পার্সোনাল</option><option value="Nagad Agent">নগদ এজেন্ট</option></select>
+      <input id="dSender" placeholder="আপনার (যে নাম্বার থেকে পাঠিয়েছেন) নাম্বার" inputmode="numeric"><input id="dAmt" type="number" placeholder="টাকার পরিমাণ (কমপক্ষে ৳10)"><input id="dTrx" placeholder="ট্রানজেকশন আইডি (TrxID)">
+      <button class="ok" id="dGo" style="width:100%">জমার আবেদন পাঠান</button>
+      <div class="note">অ্যাডমিন TrxID মিলিয়ে দেখার পর ব্যালেন্সে টাকা যোগ হবে।</div></div>
+    <div id="pWd" class="hide">
+      <select id="wM"><option value="bKash">বিকাশ</option><option value="Nagad">নগদ</option></select>
+      <input id="wNum" placeholder="যে নাম্বারে টাকা নেবেন" inputmode="numeric"><input id="wAmt" type="number" placeholder="টাকার পরিমাণ (কমপক্ষে ৳20)">
+      <button id="wGo" style="width:100%">তোলার আবেদন পাঠান</button>
+      <div class="note">আবেদন করলেই ব্যালেন্স থেকে টাকা কেটে রাখা হবে। আবেদন বাতিল হলে টাকা ফেরত আসবে।</div></div></div>
+
+  <div class="card"><h3>🧾 লেনদেনের ইতিহাস</h3><table id="hist"></table></div>
+</div>
+
+<script>
+// ⚠️ আপনার নিজের বিকাশ/নগদ নাম্বার বসান (ইউজাররা এই নাম্বারে টাকা পাঠাবে):
+const PAY={bKash:'01818714458',Nagad:'01818714458'};   // সার্ভার (BKASH_NUMBER / NAGAD_NUMBER) পাঠালে সেটাই বসে
+let STAKES=[10,20,30,50,100,500], FEE=5, MINWD=20, QS={}, inQ=false, qStake=0;   // সার্ভারের /api/config থেকে আপডেট হয়
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let token=localStorage.getItem('tk'),me=null,socket=null,stake=100,fx=0;
+const toast=m=>{const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(fx);fx=setTimeout(()=>t.style.display='none',3500)};
+const show=id=>['auth','lobby'].forEach(x=>$(x).classList.toggle('hide',x!==id));
+const prizeOf=s=>s*2-Math.floor(s*2*FEE/100);       // মোট পুল থেকে ফি কাটার পর
+async function api(url,body){const r=await fetch(url,{method:body?'POST':'GET',headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:body?JSON.stringify(body):undefined});
+  const j=await r.json().catch(()=>({}));if(!r.ok){const e=new Error(j.error||'কিছু একটা সমস্যা হয়েছে');e.status=r.status;throw e}return j}
+
+// ── ছবি কম্প্রেসার: যত বড় ছবিই হোক, মাঝখান থেকে চৌকো করে কেটে ছোট করে JPEG বানায় (সর্বোচ্চ প্রায় ৪০ কিলোবাইট) ──
+async function loadBitmap(file){
+  if(window.createImageBitmap){try{return await createImageBitmap(file,{imageOrientation:'from-image'})}catch(e){try{return await createImageBitmap(file)}catch(e2){}}}
+  return await new Promise((res,rej)=>{const u=URL.createObjectURL(file),im=new Image();im.onload=()=>{URL.revokeObjectURL(u);res(im)};im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('bad'))};im.src=u})}
+async function compressPhoto(file){
+  if(!file||!/^image\//.test(file.type||'image/'))throw new Error('শুধু ছবি (JPG/PNG) দিন');
+  let bmp;try{bmp=await loadBitmap(file)}catch{throw new Error('এই ছবিটি খোলা যাচ্ছে না, অন্য ছবি দিন')}
+  const sw=bmp.width,sh=bmp.height,m=Math.min(sw,sh),sx=(sw-m)/2,sy=(sh-m)/2;
+  for(const size of [160,128,96]){
+    const c=document.createElement('canvas');c.width=c.height=size;const x=c.getContext('2d');
+    x.fillStyle='#fff';x.fillRect(0,0,size,size);x.imageSmoothingQuality='high';x.drawImage(bmp,sx,sy,m,m,0,0,size,size);
+    for(let q=.88;q>=.4;q-=.12){const d=c.toDataURL('image/jpeg',q);if(d.length<=45000){bmp.close&&bmp.close();return d}}
+  }
+  throw new Error('ছবিটি কম্প্রেস করা গেল না, অন্য ছবি দিন')}
+const setAv=(el,src)=>{el.style.backgroundImage=src?`url(${src})`:'';el.firstChild&&el.firstChild.nodeType===3&&(el.firstChild.textContent=src?'':'👤')};
+let photo=null;
+$('aFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;
+  try{photo=await compressPhoto(f);setAv($('aAv'),photo);$('aFileNote').textContent='ছবি ঠিক আছে ✅ ('+Math.round(photo.length*.75/1024)+' KB)'}
+  catch(err){photo=null;setAv($('aAv'),null);e.target.value='';toast(err.message)}};
+$('uFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;
+  try{const d=await compressPhoto(f);await api('/api/avatar',{avatar:d});me.avatar=d;setAv($('uav'),d);toast('ছবি বদলানো হয়েছে')}
+  catch(err){toast(err.message)}e.target.value=''};
+
+// ── প্রবেশ (রেজিস্ট্রেশন নেই): নাম + পাসওয়ার্ড + ঐচ্ছিক ছবি ──
+const FULL=/^[\p{L}\p{M}\p{N}]+_\d{5}$/u, BAD=/[^\p{L}\p{M}\p{N}]/gu;
+const newSuf=()=>String(10000+Math.floor(Math.random()*90000));
+let suf=newSuf();
+function entry(){                                  // টাইপ করা নাম থেকে ইউজারনেম বানায়
+  const v=$('aName').value.trim().replace(/\s+/g,'');if(!v)return null;
+  if(FULL.test(v))return{u:v,fresh:false};         // আগের পুরো ইউজারনেম লিখলে সেটাই (লগইন)
+  const b=[...v.replace(BAD,'')].slice(0,12).join('');return b?{u:b+'_'+suf,fresh:true}:null}
+function preview(){const r=entry();$('uPrev').innerHTML=r?(r.fresh?'আপনার ইউজারনেম হবে: ':'এই অ্যাকাউন্টে ঢুকবেন: ')+'<b>'+esc(r.u)+'</b>':''}
+$('aName').oninput=preview;
+$('af').onsubmit=async ev=>{ev.preventDefault();const r=entry();if(!r)return toast('আগে আপনার নাম লিখুন');
+  const pw=$('aPass').value;$('aGo').disabled=true;
+  try{const j=await api('/api/enter',{username:r.u,password:pw,fresh:r.fresh,avatar:photo||undefined});
+    token=j.token;localStorage.setItem('tk',token);
+    $('aName').value=r.u;                                   // ব্রাউজার যেন পুরো ইউজারনেমসহ পাসওয়ার্ড সেভ করে
+    try{if(window.PasswordCredential&&navigator.credentials&&navigator.credentials.store)await navigator.credentials.store(new PasswordCredential({id:r.u,password:pw,name:r.u}))}catch(e){}
+    await start()}
+  catch(e){if(e.status===409&&r.fresh){suf=newSuf();preview()}toast(e.message)}
+  $('aGo').disabled=false};
+$('out').onclick=()=>{localStorage.removeItem('tk');token=null;socket&&socket.disconnect();inQ=false;queued(false);$('aPass').value='';show('auth')};
+
+// ── লবি ──
+function renderStakes(){$('stakes').innerHTML=STAKES.map(s=>`<div class="stake" data-s="${s}"><b>৳${s}</b><small>জিতলে ৳${prizeOf(s)}</small></div>`).join('');if(!STAKES.includes(stake))stake=STAKES[0];paintStake()}
+$('stakes').onclick=e=>{const d=e.target.closest('.stake');if(!d)return;stake=+d.dataset.s;paintStake()};
+function paintStake(){document.querySelectorAll('.stake').forEach(d=>d.classList.toggle('on',+d.dataset.s===stake));$('prizeNote').textContent=`এন্ট্রি ৳${stake} • মোট পুল ৳${stake*2} • ${FEE}% ফি কেটে বিজয়ী পাবে ৳${prizeOf(stake)}`}
+// রিয়েল-টাইম: কোন এন্ট্রিতে কতজন প্রতিপক্ষের জন্য অপেক্ষায় আছে
+const cnt=s=>(QS[s]||0)-(inQ&&s===qStake?1:0);          // নিজেকে বাদ দিয়ে গোনা
+function renderLive(){const rows=STAKES.filter(s=>cnt(s)>0);
+  $('live').innerHTML=rows.length?rows.map(s=>`<div class="lrow"><div class="badge">${cnt(s)}</div><b>Prize Money ৳${s} available<small>জিতলে ৳${prizeOf(s)} পাবেন</small></b><button class="ok" data-join="${s}"${inQ?' disabled':''}>খেলুন</button></div>`).join(''):'<div class="empty">এই মুহূর্তে কেউ অপেক্ষায় নেই। নিচ থেকে নতুন গেম দিন।</div>'}
+$('live').onclick=e=>{const b=e.target.closest('button[data-join]');if(!b||inQ||!socket)return;stake=+b.dataset.join;paintStake();socket.emit('joinQueue',{userId:me.id,betAmount:stake})};
+$('tDep').onclick=()=>{$('pDep').classList.remove('hide');$('pWd').classList.add('hide');$('tDep').classList.add('on');$('tWd').classList.remove('on')};
+$('tWd').onclick=()=>{$('pWd').classList.remove('hide');$('pDep').classList.add('hide');$('tWd').classList.add('on');$('tDep').classList.remove('on')};
+const payInfo=()=>{const o=$('dM'),k=o.value.split(' ')[0];$('payInfo').innerHTML=`আগে <b>${esc(o.options[o.selectedIndex].text)}</b> নাম্বার <b>${PAY[k]}</b>-এ সেন্ড মানি করুন, তারপর নিচে ট্রানজেকশন আইডি (TrxID) দিন।`};
+$('dM').onchange=payInfo;payInfo();
+$('dGo').onclick=async()=>{try{await api('/api/deposit',{payment_method:$('dM').value,sender_number:$('dSender').value.trim(),amount:parseInt($('dAmt').value),transaction_id:$('dTrx').value.trim()});
+  toast('জমার আবেদন গেছে, অ্যাডমিন অনুমোদন করলে ব্যালেন্সে টাকা আসবে');$('dTrx').value='';hist()}catch(e){toast(e.message)}};
+$('wGo').onclick=async()=>{try{await api('/api/withdraw',{payment_method:$('wM').value,recipient_number:$('wNum').value.trim(),amount:parseInt($('wAmt').value)});
+  toast('তোলার আবেদন গেছে');$('wAmt').value='';hist()}catch(e){toast(e.message)}};
+const fmt=ts=>{const d=new Date(String(ts).replace(' ','T')+'Z');return isNaN(d)?'':d.toLocaleString('bn-BD',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})};  // সময় বাংলাদেশের সময়ে
+async function hist(){try{const L=await api('/api/transactions');
+  const N={deposit:'জমা',withdraw:'উত্তোলন',bet_deduct:'এন্ট্রি ফি',bet_win:'পুরস্কার/ফেরত'},ST={pending:'অপেক্ষমাণ',approved:'সম্পন্ন',rejected:'বাতিল'};
+  $('hist').innerHTML=L.length?L.map(t=>{const plus=t.type=='deposit'||t.type=='bet_win';return`<tr><td>${N[t.type]||esc(t.type)}</td><td class="${plus?'a':'r'}">${plus?'+':'-'}৳${t.amount}</td><td class="${t.status[0]=='p'?'p':t.status[0]=='a'?'a':'r'}">${ST[t.status]||esc(t.status)}</td><td>${fmt(t.timestamp)}</td></tr>`}).join(''):'<tr><td>কোনো লেনদেন নেই</td></tr>'}catch{}}
+$('play').onclick=()=>socket.emit('joinQueue',{userId:me.id,betAmount:stake});
+$('cancelQ').onclick=()=>{socket.emit('leaveQueue');queued(false)};
+const queued=q=>{inQ=q;$('play').classList.toggle('hide',q);$('cancelQ').classList.toggle('hide',!q);renderLive()};
+
+// ── সকেট ──
+async function start(){try{me=await api('/api/me')}catch{localStorage.removeItem('tk');token=null;return show('auth')}
+  $('uname').textContent=me.username;setAv($('uav'),me.avatar);renderStakes();renderLive();show('lobby');hist();
+  socket&&socket.disconnect();socket=io({auth:{token}});
+  socket.on('connect_error',()=>{toast('লগইনের মেয়াদ শেষ, আবার প্রবেশ করুন');$('out').click()});
+  socket.on('walletUpdated',({balance})=>{$('bal').textContent=balance;hist()});
+  socket.on('queueJoined',d=>{qStake=d.betAmount;queued(true)});
+  socket.on('queueStats',s=>{QS=s||{};renderLive()});
+  socket.on('errorMsg',({message})=>{toast(message);queued(false)});
+  socket.on('matchStart',m=>{location.href='/game.html?room='+m.roomId});
+  socket.on('matchActive',m=>{location.href='/game.html?room='+m.roomId})}   // চলমান ম্যাচ থাকলে সরাসরি সেখানে ফেরত পাঠায়
+(async()=>{try{const c=await fetch('/api/config').then(r=>r.json());if(Array.isArray(c.stakes))STAKES=c.stakes;if(c.feePct!=null)FEE=c.feePct;if(c.pay){if(c.pay.bKash)PAY.bKash=c.pay.bKash;if(c.pay.Nagad)PAY.Nagad=c.pay.Nagad;payInfo()}if(c.minWd!=null){MINWD=c.minWd;$('wAmt').placeholder='টাকার পরিমাণ (কমপক্ষে ৳'+MINWD+')'}}catch{}
+  renderStakes();if(token)start()})();
+
+// ── PWA: সার্ভিস ওয়ার্কার + "Install App" বোতাম ──
+if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+let dip=null;const standalone=()=>matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches||navigator.standalone===true;
+const showInst=()=>{$('instWrap').style.display=standalone()?'none':'block'};showInst();
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();dip=e;showInst()});
+addEventListener('appinstalled',()=>{dip=null;$('instWrap').style.display='none';toast('অ্যাপ ইনস্টল হয়ে গেছে ✅')});
+$('installBtn').onclick=async()=>{
+  if(dip){dip.prompt();try{await dip.userChoice}catch{}dip=null;return}
+  const ua=navigator.userAgent,ios=/iphone|ipad|ipod/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  $('iosTxt').innerHTML=ios?'১) Safari ব্রাউজারে এই পেজ খুলুন<br>২) নিচের (বা ওপরের) <b>Share ⬆️</b> বোতাম চাপুন<br>৩) <b>Add to Home Screen</b> চাপুন, তারপর <b>Add</b>'
+   :/FBAN|FBAV|Instagram|Line\//i.test(ua)?'এটি অ্যাপের ভেতরের ব্রাউজার। ওপরের ⋮ মেনু থেকে <b>Open in Chrome</b> চেপে Chrome-এ খুলুন, তারপর আবার <b>Install App</b> চাপুন।'
+   :'Chrome-এর ডানদিকের ওপরের <b>⋮ মেনু</b> খুলে <b>Install app</b> বা <b>Add to Home screen</b> চাপুন।<br><small>(পেজটি https লিংকে খুলতে হবে)</small>';
+  $('iosHelp').style.display='flex'};
+</script></body></html>

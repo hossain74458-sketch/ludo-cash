@@ -1,0 +1,348 @@
+<!DOCTYPE html><html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>লুডো</title>
+<meta name="theme-color" content="#14121f"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#efe7d6;--bg2:#d9c9a3;--fg:#222;--card:#fff;--bd:#c9bfa8}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#26223a;--bg2:#14121f;--fg:#f1eefc;--card:#33304a;--bd:#5a5580}}
+:root[data-theme="dark"]{--bg:#26223a;--bg2:#14121f;--fg:#f1eefc;--card:#33304a;--bd:#5a5580}
+body{margin:0;padding:10px;background:radial-gradient(circle at 50% 0,var(--bg),var(--bg2));min-height:100vh;color:var(--fg);font-family:"Noto Sans Bengali","Hind Siliguri","Nirmala UI","Kalpurush",system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;gap:10px}
+#bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between;width:100%;max-width:560px;font-size:13px}
+#leave{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:45}
+#leave .card{max-width:min(92vw,400px);text-align:center;line-height:1.7}#leave .row2{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+#who{font-weight:700;font-size:17px;display:flex;align-items:center;gap:8px}
+#dot{width:18px;height:18px;border-radius:50%;box-shadow:0 0 10px currentColor}
+#msg{min-height:1.4em;font-size:14px;font-weight:600;text-align:center}
+#bw{position:relative}
+canvas{display:block;touch-action:manipulation;border-radius:14px;box-shadow:0 8px 30px #0006,0 0 0 5px #5d4037}
+#dice{position:absolute;padding:0;border:0;background:none;cursor:pointer;display:none;border-radius:18%;transition:left .5s,top .5s,width .3s,height .3s,transform .3s}
+#dice:not(:disabled){animation:pulse 1s infinite}#dice:disabled{cursor:default}
+@keyframes pulse{50%{box-shadow:0 0 22px 8px var(--c,#ffd54f)}}
+.sc{width:100%;height:100%;perspective:500px}.cube{width:100%;height:100%;position:relative;transform-style:preserve-3d}
+.fc{position:absolute;inset:0;background:linear-gradient(145deg,#fff,#d4d4d4);border:2px solid #999;border-radius:18%;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:14%;box-sizing:border-box;transform:var(--t) translateZ(calc(var(--z)/2))}
+.fc i{width:72%;height:72%;border-radius:50%;margin:auto;background:radial-gradient(circle at 35% 30%,#666,#111)}.fc i.o{background:none}
+#big{position:absolute;left:50%;top:50%;width:20%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-weight:900;border-radius:24%;background:linear-gradient(145deg,#fff,#e0e0e0);border:5px solid var(--c);box-shadow:0 10px 30px #000a;pointer-events:none;opacity:0;transform:translate(-50%,-50%) scale(0)}
+#big.show{animation:big 1.5s forwards}
+@keyframes big{0%{transform:translate(-50%,-50%) scale(0) rotate(-200deg);opacity:0}25%{transform:translate(-50%,-50%) scale(1.3) rotate(0);opacity:1}40%,75%{transform:translate(-50%,-50%) scale(1);opacity:1}100%{transform:translate(-50%,-50%) scale(.1);opacity:0}}
+#score{display:flex;gap:12px;font-size:13px;flex-wrap:wrap;justify-content:center}
+#cards{display:none;gap:6px;flex-direction:column;align-items:stretch;width:100%;max-width:560px;font-size:13px;font-weight:600}
+#cards .chip{background:var(--card);font-size:13px;padding:5px 10px}#cards .chip:disabled{cursor:default}
+#emo{display:flex;flex-wrap:wrap;gap:2px;align-items:center;justify-content:center;background:var(--card);padding:6px 8px;border-radius:12px;width:100%;max-width:560px;font-size:12px;box-shadow:0 2px 8px #0003}
+.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:4px 0}
+.chip{border:2px solid var(--bd);background:transparent;color:var(--fg);border-radius:20px;padding:3px 9px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px}
+.chip.on{border-color:#e53935;font-weight:700}.chip i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.eb{font-size:24px;border:0;background:transparent;cursor:pointer;padding:2px 5px;border-radius:8px}.eb:active{transform:scale(1.4)}
+#menu{position:fixed;inset:0;background:#000b;display:flex;align-items:center;justify-content:center;z-index:5}
+.card{background:var(--card);padding:22px;border-radius:16px;display:flex;flex-direction:column;gap:10px;min-width:250px}
+select,button.go{font-size:16px;padding:8px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg)}
+button.go{background:#e53935;color:#fff;border:0;font-weight:700}
+#rules{font-size:12px;opacity:.8;max-width:290px;line-height:1.5}
+#prize{background:linear-gradient(90deg,#b8860b,#ffd54f,#b8860b);color:#3b2a00;font-weight:800;padding:6px 16px;border-radius:20px;display:none;animation:glow 2s infinite}
+@keyframes glow{50%{box-shadow:0 0 26px 4px #ffca28}0%,100%{box-shadow:0 0 12px #ffd54f}}
+.seat{display:flex;align-items:center;gap:8px}.seat i{width:12px;height:12px;border-radius:50%;flex:none}
+.ph{width:40px;height:40px;border-radius:50%;border:2px dashed var(--bd);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;font-size:18px;flex:none}.ph img{width:100%;height:100%;object-fit:cover}
+.nm,#bet{font-size:15px;padding:6px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg);width:130px;box-sizing:border-box}
+#win{position:fixed;inset:0;background:#000d;display:none;flex-direction:column;align-items:center;justify-content:center;gap:8px;z-index:6;color:#fff;text-align:center}
+#wc{width:360px;height:300px;max-width:95vw}
+#tmr{font-weight:700;font-size:13px;min-width:90px;text-align:center}
+#cards .cl{font-size:13px;font-weight:700;text-align:center}#cards .row{justify-content:center}
+.cb{display:block;text-align:left;background:var(--card);color:var(--fg);border:2px solid var(--bd);border-radius:12px;padding:8px 12px;cursor:pointer;font-family:inherit}
+.cb b{display:block;font-size:14px}.cb span{display:block;font-size:12px;opacity:.85;line-height:1.5;margin-top:2px}.cb:disabled{opacity:.45;cursor:default}
+#fxl{position:fixed;inset:0;pointer-events:none;z-index:40;overflow:hidden}
+.fe{position:absolute;top:100vh;line-height:1;animation:fl linear forwards}
+@keyframes fl{0%{transform:translate(0,0) rotate(0) scale(.6);opacity:0}12%{opacity:1}100%{transform:translate(var(--dx),-125vh) rotate(var(--rt)) scale(1.15);opacity:.9}}
+.fs{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%);background:#000c;color:#fff;padding:8px 16px;border-radius:20px;font-weight:700;z-index:41;pointer-events:none;animation:fs 2.2s forwards}
+@keyframes fs{0%{opacity:0;transform:translate(-50%,-30%) scale(.7)}15%,80%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0}}
+#help{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:30}
+#help .card{max-width:min(92vw,470px);max-height:86vh;overflow:auto;font-size:13px;line-height:1.6}#help .it{margin:3px 0}
+#rules .it{margin:2px 0}
+</style></head><body>
+<div id="bar"><div id="who"><span id="dot"></span><span id="name"></span></div><span id="tmr"></span><button class="chip" id="hb">📖 নিয়ম</button><button class="chip" id="lv" style="background:#b71c1c;color:#fff;border-color:#b71c1c">❌ বাতিল করুন</button><label><input type="checkbox" id="snd" checked> শব্দ</label></div>
+<div id="msg"></div><div id="prize"></div>
+<div id="bw"><canvas id="cv"></canvas><button id="dice" disabled><div class="sc"><div class="cube" id="cube"></div></div></button><div id="big"></div></div>
+<div id="score"></div>
+<div id="cards"></div>
+<div id="emo"></div><div id="fxl"></div>
+<div id="leave"><div class="card"><h3 style="margin:0">⚠️ গেম ছেড়ে বের হবেন?</h3><div>আপনি এখন বের হয়ে গেলে <b>গেমে হার হবে</b>, <b>প্রতিপক্ষ জিতবে</b> এবং আপনার এন্ট্রি ফি ফেরত পাবেন না। আপনি কি নিশ্চিত?</div><div class="row2"><button class="go" id="ln" style="background:#2e7d32">না, খেলব</button><button class="go" id="ly" style="background:#b71c1c">হ্যাঁ, বের হব (হার মানব)</button></div></div></div>
+<div id="help"><div class="card"><h3 style="margin:0">📖 খেলার নিয়ম</h3><div id="rl"></div><h3 style="margin:8px 0 0">🃏 কার্ডের কাজ</h3><div id="cl2"></div><button class="go" id="hx">বন্ধ করুন</button></div></div>
+<div id="menu"><div class="card"><h2 style="margin:0" id="ttl">🎲 লুডো</h2><div id="res"></div>
+<label>খেলোয়াড় <select id="np"><option>2</option><option>3</option><option selected>4</option></select></label>
+<label>মানুষ <select id="nh"><option>0</option><option>1</option><option selected>2</option><option>3</option><option>4</option></select></label>
+<div id="seats"></div><label>এন্ট্রি ফি ৳ <input id="bet" type="number" min="0" value="100"></label>
+<label>খেলা শেষ হবে <select id="mode"><option value="1">যে আগে সব ঘুঁটি ঘরে তুলবে</option><option value="0">পুরো র‍্যাংকিং হলে</option></select></label>
+<label>প্রত্যেকের ঘুঁটি <select id="tk"><option>1</option><option>2</option><option selected>4</option></select></label>
+<label>বট <select id="df"><option value="0">সহজ</option><option value="1" selected>স্মার্ট</option></select></label>
+<button class="go" id="go">খেলা শুরু</button>
+<div id="rules"></div></div></div>
+<div id="win"><h2 id="wt" style="margin:0"></h2><canvas id="wc"></canvas><div id="wr"></div><button class="go" id="wb">লবিতে ফিরুন</button></div>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/net.js"></script>
+<script>
+const $=id=>document.getElementById(id),cv=$('cv'),ctx=cv.getContext('2d');
+const COL=['#e53935','#43a047','#fdd835','#1e88e5'],DK=['#7f1212','#17501b','#a67c00','#0b3a7a'],NM=['লাল','সবুজ','হলুদ','নীল'];
+const STAR_OFF=7,DNG_OFF=10,BACK=2,HBACK=4,HL=3,HDR=51+HL,EM=['😂','😎','😡','😭','👏','🔥','🤯','😈','🙏','💀'];
+const TR=[],seg=(x,y,dx,dy,n)=>{for(let i=0;i<n;i++)TR.push([x+dx*i,y+dy*i])};
+seg(1,6,1,0,5);seg(6,5,0,-1,6);seg(7,0,1,0,2);seg(8,1,0,1,5);seg(9,6,1,0,6);seg(14,7,0,1,2);
+seg(13,8,-1,0,5);seg(8,9,0,1,6);seg(7,14,-1,0,2);seg(6,13,0,-1,5);seg(5,8,-1,0,6);seg(0,7,0,-1,2);
+const HC=[[1,7,1,0],[7,1,0,1],[13,7,-1,0],[7,13,0,-1]].map(([x,y,dx,dy])=>Array.from({length:5},(_,i)=>[x+dx*i,y+dy*i]));
+const START=[0,13,26,39],STARS=new Set(START.map(a=>a+STAR_OFF)),DNG=new Set(START.map(a=>a+DNG_OFF));
+const SAFE=new Set([...START,...STARS]),BOX_OFF=3,MB=new Set(START.map(a=>(a+BOX_OFF)%52)),MAXC=4;
+const CARDS={
+ back3:{e:'👊',n:'ধাক্কা',d:'প্রতিপক্ষের একটি ঘুঁটিকে ৩ ঘর পেছনে পাঠিয়ে দেয়। (নিরাপদ ঘর, ঢাল দেওয়া ঘুঁটি, জোড়া ঘুঁটি বা ঘরে ঢোকার রাস্তার ঘুঁটির ওপর কাজ করে না)'},
+ fwd1:{e:'🚀',n:'এক ঘর সামনে',d:'বোর্ডে থাকা আপনার যেকোনো একটি ঘুঁটিকে ১ ঘর সামনে এগিয়ে দেয়।'},
+ setme:{e:'🎯',n:'নিজের পাশা ঠিক করুন',d:'আপনার পরের পাশায় আপনি যে সংখ্যা (১ থেকে ৬) বেছে নেবেন ঠিক সেটাই পড়বে।'},
+ setopp:{e:'🎲',n:'প্রতিপক্ষের পাশা ঠিক করুন',d:'প্রতিপক্ষের পরের পাশায় আপনার বেছে নেওয়া সংখ্যাই পড়বে — খারাপ সংখ্যা দিয়ে তাকে আটকে দিন।'},
+ shield:{e:'🛡️',n:'ঢাল',d:'আপনার একটি ঘুঁটিকে আপনার পরের চাল পর্যন্ত কাটা পড়া ও ধাক্কা খাওয়া থেকে বাঁচায়।'}},CK=Object.keys(CARDS);
+const YARD=[[0,0],[9,0],[9,9],[0,9]];
+const FT=['','rotateY(90deg)','rotateX(90deg)','rotateX(-90deg)','rotateY(-90deg)','rotateY(180deg)'],FIN=[[0,0],[0,-90],[-90,0],[90,0],[0,90],[0,180]];
+const PIPS=['000010000','100000001','100010001','101000101','101010101','101101101'];
+$('cube').innerHTML=PIPS.map((p,k)=>`<div class="fc" style="--t:${FT[k]}">${[...p].map(c=>`<i class="${c=='1'?'':'o'}"></i>`).join('')}</div>`).join('');
+let W=0,G=null,ac,es=0,et='all',lastE=0,WIN=null;const AVS=[null,null,null,null],NAMES=['','','',''];
+let FAST=false;const sleep=ms=>new Promise(r=>setTimeout(r,FAST?0:ms)),cur=()=>G.pl[G.turn],say=m=>$('msg').textContent=m;
+function beep(f,d){if(FAST||!$('snd').checked)return;try{ac=ac||new AudioContext();const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=f;g.gain.value=.05;o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+d)}catch(e){}}
+function fit(){const w=Math.min(innerWidth-20,560),D=devicePixelRatio||1;W=w;cv.style.width=cv.style.height=w+'px';cv.width=cv.height=Math.round(w*D);ctx.setTransform(D,0,0,D,0,0);$('big').style.fontSize=w*.12+'px';if(G)placeDice()}
+function placeDice(){const s=W/15,[bx,by]=YARD[cur().p],d=$('dice'),z=1.3;d.style.width=d.style.height=s*z+'px';d.style.setProperty('--z',s*z+'px');d.style.setProperty('--c',COL[cur().p]);d.style.left=(bx+3-z/2)*s+'px';d.style.top=(by+3-z/2)*s+'px'}
+function showBig(v){const b=$('big');b.textContent=v;b.style.setProperty('--c',COL[cur().p]);b.style.color=DK[cur().p];b.classList.remove('show');void b.offsetWidth;b.classList.add('show')}
+// r: -1 yard, 0..50 track, 51..55 home lane, 56 home
+function pos(p,r,i){
+ if(r<0){const[bx,by]=YARD[p];return[bx+2+(i%2)*2,by+2+(i>>1)*2]}
+ if(r<=50){const[x,y]=TR[(START[p]+r)%52];return[x+.5,y+.5]}
+ if(r<=55){const[x,y]=HC[p][r-51];return[x+.5,y+.5]}
+ const o=[[-.75,0],[0,-.75],[.75,0],[0,.75]][p],s=(i-1.5)*.18;
+ return[7.5+o[0]+(o[0]?0:s),7.5+o[1]+(o[1]?0:s)]}
+function layout(){const L=[],c={};
+ G.pl.forEach(pl=>pl.t.forEach((r,i)=>{const[x,y]=pos(pl.p,r,i),k=x+','+y;(c[k]=c[k]||[]).push({x,y,p:pl.p,i,r,pl})}));
+ Object.values(c).forEach(a=>a.forEach((o,j)=>{if(a.length>1&&o.r>=0&&o.r<56)o.x+=(j-(a.length-1)/2)*.3;
+  const v=o.pl.v[o.i]||(o.pl.v[o.i]=[o.x,o.y]);v[0]+=(o.x-v[0])*.25;v[1]+=(o.y-v[1])*.25;o.x=v[0];o.y=v[1];L.push(o)}));
+ return L.sort((a,b)=>a.y-b.y)}
+function tile(x,y,c){const s=W/15,m=s*.05,w=s-2*m;ctx.fillStyle='#0004';ctx.beginPath();ctx.roundRect(x*s+m,y*s+m+s*.08,w,w,s*.15);ctx.fill();
+ ctx.fillStyle=c;ctx.beginPath();ctx.roundRect(x*s+m,y*s+m,w,w,s*.15);ctx.fill();
+ const g=ctx.createLinearGradient(0,y*s,0,(y+1)*s);g.addColorStop(0,'#fffa');g.addColorStop(.5,'#fff0');g.addColorStop(1,'#0004');ctx.fillStyle=g;ctx.fill();ctx.strokeStyle='#fff9';ctx.lineWidth=1.2;ctx.stroke()}
+function danger(x,y,lvl){tile(x,y,lvl?'#4a0d0d':'#ffe082');const s=W/15,cx=(x+.5)*s,cy=(y+.55)*s;ctx.textAlign='center';ctx.textBaseline='middle';
+ if(lvl){ctx.font=`${s*.62}px sans-serif`;ctx.fillText('💀',cx,cy)}
+ else{ctx.beginPath();ctx.moveTo(cx,cy-.36*s);ctx.lineTo(cx+.4*s,cy+.3*s);ctx.lineTo(cx-.4*s,cy+.3*s);ctx.closePath();ctx.fillStyle='#d50000';ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+  ctx.fillStyle='#fff';ctx.font=`bold ${s*.4}px sans-serif`;ctx.fillText('!',cx,cy+.08*s)}}
+function star(cx,cy,R,t){ctx.save();ctx.shadowColor='#ffb300';ctx.shadowBlur=8+5*Math.sin(t/300);
+ const g=ctx.createLinearGradient(cx,cy-R,cx,cy+R);g.addColorStop(0,'#fff176');g.addColorStop(1,'#ff9800');ctx.fillStyle=g;ctx.beginPath();
+ for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,r=i%2?R*.45:R;ctx.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r)}
+ ctx.closePath();ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='#b26a00';ctx.lineWidth=1.5;ctx.stroke();ctx.restore()}
+function pawn(x,y,r,p){y-=r*.25;ctx.fillStyle='#0005';ctx.beginPath();ctx.ellipse(x,y+r*.95,r*.95,r*.3,0,0,7);ctx.fill();
+ const g=ctx.createLinearGradient(x-r,0,x+r,0);g.addColorStop(0,DK[p]);g.addColorStop(.4,COL[p]);g.addColorStop(1,DK[p]);ctx.fillStyle=g;ctx.strokeStyle='#222';ctx.lineWidth=1.5;
+ ctx.beginPath();ctx.moveTo(x-r*.85,y+r*.95);ctx.quadraticCurveTo(x-r*.3,y+r*.1,x-r*.25,y-r*.2);ctx.lineTo(x+r*.25,y-r*.2);ctx.quadraticCurveTo(x+r*.3,y+r*.1,x+r*.85,y+r*.95);ctx.closePath();ctx.fill();ctx.stroke();
+ const h=ctx.createRadialGradient(x-r*.2,y-r*.7,r*.05,x,y-r*.5,r*.6);h.addColorStop(0,'#fff');h.addColorStop(.4,COL[p]);h.addColorStop(1,DK[p]);ctx.fillStyle=h;ctx.beginPath();ctx.arc(x,y-r*.5,r*.55,0,7);ctx.fill();ctx.stroke()}
+function panda(c,x,y,r,o={}){const L=o.l||[-1.05,.9],R=o.r||[1.05,.9];c.save();c.lineCap='round';c.strokeStyle='#111';
+ c.lineWidth=r*.38;[[L,-1],[R,1]].forEach(([h,d])=>{c.beginPath();c.moveTo(x+d*r*.6,y+r*1.1);c.lineTo(x+h[0]*r,y+h[1]*r);c.stroke()});
+ if(o.stick!=null){c.strokeStyle='#8d5524';c.lineWidth=r*.2;c.beginPath();c.moveTo(x+R[0]*r,y+R[1]*r);c.lineTo(x+R[0]*r+Math.cos(o.stick)*r*2.4,y+R[1]*r+Math.sin(o.stick)*r*2.4);c.stroke()}
+ c.fillStyle='#fff';c.strokeStyle='#111';c.lineWidth=r*.07;c.beginPath();c.ellipse(x,y+r*1.25,r*.85,r*.95,0,0,7);c.fill();c.stroke();
+ c.fillStyle='#111';[-1,1].forEach(d=>{c.beginPath();c.ellipse(x+d*r*.5,y+r*2.05,r*.3,r*.2,0,0,7);c.fill();c.beginPath();c.arc(x+d*r*.78,y-r*.78,r*.33,0,7);c.fill()});
+ c.fillStyle='#fff';c.beginPath();c.arc(x,y,r,0,7);c.fill();c.stroke();
+ c.fillStyle='#111';[-1,1].forEach(d=>{c.beginPath();c.ellipse(x+d*r*.4,y-r*.05,r*.22,r*.3,d*.5,0,7);c.fill()});
+ c.fillStyle='#fff';[-1,1].forEach(d=>{c.beginPath();c.arc(x+d*r*.4,y-r*.1,r*.08,0,7);c.fill()});
+ c.fillStyle='#111';c.beginPath();c.ellipse(x,y+r*.3,r*.15,r*.1,0,0,7);c.fill();
+ if(o.cap){c.fillStyle='#fff';c.beginPath();c.roundRect(x-r*.5,y-r*1.25,r,r*.42,r*.1);c.fill();c.stroke();c.fillStyle='#e53935';c.fillRect(x-r*.07,y-r*1.2,r*.14,r*.32);c.fillRect(x-r*.17,y-r*1.11,r*.34,r*.14)}
+ c.restore()}
+function trolley(x,y,s){ctx.fillStyle='#0003';ctx.fillRect(x-s*.45,y+s*.44,s*.9,s*.05);ctx.fillStyle='#eee';ctx.strokeStyle='#555';ctx.lineWidth=1.5;ctx.beginPath();ctx.roundRect(x-s*.45,y+s*.12,s*.9,s*.2,s*.05);ctx.fill();ctx.stroke();
+ ctx.fillStyle='#e53935';ctx.fillRect(x-s*.04,y+s*.15,s*.08,s*.14);ctx.fillRect(x-s*.09,y+s*.18,s*.18,s*.08);ctx.fillStyle='#222';[-.3,.3].forEach(d=>{ctx.beginPath();ctx.arc(x+d*s,y+s*.4,s*.07,0,7);ctx.fill()})}
+function drawFx2(t){const s=W/15;G.fx2=G.fx2.filter(f=>t-f.t0<f.dur);G.fx2.forEach(f=>{const p=(t-f.t0)/f.dur,k=Math.min(1,p*8)*(p>.85?(1-p)/.15:1),x=f.x*s,y=f.y*s;
+ ctx.save();ctx.translate(x,y);ctx.scale(k,k);ctx.translate(-x,-y);ctx.textAlign='center';ctx.textBaseline='middle';
+ if(f.k=='hit'){panda(ctx,x+s*.85,y-s*.45,s*.3,{stick:-1.2-2.2*Math.min(1,Math.max(0,(p-.25)/.18)),r:[-1.05,.3],l:[1,.9]});
+  if(p>.4&&p<.65){ctx.font=`${s*.9}px sans-serif`;ctx.fillText('💥',x,y)}}
+ else{const b=Math.abs(Math.sin(p*16))*s*.25;panda(ctx,x,y-s*.9-b,s*.4,{l:[-1.1,-.9],r:[1.1,-.9]});ctx.font=`${s*.8}px sans-serif`;ctx.fillText('🎉',x-s*.9,y-s*1.4-b);ctx.fillText('🎊',x+s*.9,y-s*1.4-b)}
+ ctx.restore()})}
+function drawAv(s){G.pl.forEach(pl=>{const p=pl.p,[bx,by]=YARD[p],L=p==0||p==3,cx=(L?.85:14.15)*s,cy=(p<2?.85:14.15)*s,R=s*.7;
+ ctx.save();ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.fillStyle=COL[p];ctx.fill();ctx.clip();
+ if(pl.av)ctx.drawImage(pl.av,cx-R,cy-R,2*R,2*R);else{ctx.font=`${R*1.1}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(pl.human?'🙂':'🤖',cx,cy+R*.05)}
+ ctx.restore();ctx.strokeStyle=pl.done?'#ffd54f':'#fff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.stroke();
+ ctx.font=`bold ${s*.4}px "Noto Sans Bengali","Nirmala UI",sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineWidth=3;ctx.strokeStyle='#000a';ctx.fillStyle='#fff';
+ const tx=(bx+(L?3.6:2.4))*s,ty=(p<2?by+.5:by+5.5)*s,n=pl.name.slice(0,18);ctx.strokeText(n,tx,ty);ctx.fillText(n,tx,ty)})}
+function draw(t){const s=W/15;ctx.fillStyle='#e9dcc0';ctx.fillRect(0,0,W,W);
+ YARD.forEach(([bx,by],p)=>{ctx.fillStyle=COL[p];ctx.fillRect(bx*s,by*s,6*s,6*s);ctx.fillStyle='#fffdf6';ctx.beginPath();ctx.roundRect((bx+1)*s,(by+1)*s,4*s,4*s,s*.6);ctx.fill();
+  for(let i=0;i<4;i++){ctx.fillStyle=COL[p]+'55';ctx.beginPath();ctx.arc((bx+2+(i%2)*2)*s,(by+2+(i>>1)*2)*s,s*.45,0,7);ctx.fill()}});
+ TR.forEach(([x,y],a)=>{if(DNG.has(a))danger(x,y,0);else if(MB.has(a)){tile(x,y,'#e1bee7');ctx.font=`${s*.6}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('🎁',(x+.5)*s,(y+.55)*s+Math.sin(t/260+a)*s*.04)}else tile(x,y,'#fff')});
+ START.forEach((a,p)=>tile(TR[a][0],TR[a][1],COL[p]));
+ HC.forEach((h,p)=>h.forEach(([x,y],k)=>k==HL?danger(x,y,1):tile(x,y,COL[p])));
+ STARS.forEach(a=>{tile(TR[a][0],TR[a][1],'#fff6d6');star((TR[a][0]+.5)*s,(TR[a][1]+.5)*s,s*.5,t)});
+ [[[6,6],[6,9]],[[6,6],[9,6]],[[9,6],[9,9]],[[6,9],[9,9]]].forEach(([a,b],p)=>{const g=ctx.createLinearGradient(a[0]*s,a[1]*s,7.5*s,7.5*s);g.addColorStop(0,DK[p]);g.addColorStop(1,COL[p]);ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(a[0]*s,a[1]*s);ctx.lineTo(b[0]*s,b[1]*s);ctx.lineTo(7.5*s,7.5*s);ctx.fill()});
+ if(!G)return;
+ drawAv(s);
+ const[bx,by]=YARD[cur().p];ctx.save();ctx.shadowColor=COL[cur().p];ctx.shadowBlur=14+8*Math.sin(t/200);ctx.strokeStyle='#111';ctx.lineWidth=4;ctx.strokeRect(bx*s+2,by*s+2,6*s-4,6*s-4);ctx.restore();
+ if(G.phase==='move'){const me=cur();ctx.save();ctx.setLineDash([5,4]);ctx.lineWidth=2.5;ctx.strokeStyle='#111';G.mv.forEach(i=>{const r=me.t[i],[px,py]=pos(me.p,r<0?0:r+G.dice,i);ctx.beginPath();ctx.arc(px*s,py*s,s*.42,0,7);ctx.stroke()});ctx.restore()}
+ G.amb.forEach(a=>{const v=a.pl.v[a.i];if(v)trolley(v[0]*s,v[1]*s,s)});
+ layout().forEach(o=>{const x=o.x*s,y=o.y*s,r=s*.3;pawn(x,y,r,o.p);
+  if(o.r>=0&&o.r<=50&&o.pl.sh[o.i]){ctx.save();ctx.fillStyle='#00e5ff33';ctx.strokeStyle='#00b8d4';ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y-r*.2,r*1.55+Math.sin(t/200)*1.5,0,7);ctx.fill();ctx.stroke();ctx.restore()}
+  if(G.phase==='pick'&&G.cu&&G.cu.cands&&G.cu.cands.some(c=>c.pl===o.pl&&c.i===o.i)){ctx.save();ctx.strokeStyle='#000';ctx.lineWidth=3;ctx.setLineDash([5,4]);ctx.beginPath();ctx.arc(x,y,r*(1.7+.12*Math.sin(t/130)),0,7);ctx.stroke();ctx.restore()}
+  if(G.phase==='move'&&o.pl===cur()&&G.mv.includes(o.i)){ctx.strokeStyle='#000';ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y,r*(1.5+.12*Math.sin(t/130)),0,7);ctx.stroke()}});
+ G.amb.forEach(a=>{const v=a.pl.v[a.i];if(!v)return;[-1,1].forEach(d=>panda(ctx,v[0]*s+d*s*.8,v[1]*s-s*.5+Math.sin(t/70+d)*s*.04,s*.22,{cap:1,l:[-.9,.9],r:[.9,.9]}))});drawFx2(t);
+ G.fx=G.fx.filter(f=>(t-f.t0)<1800);
+ G.fx.forEach(f=>{const p=(t-f.t0)/1800,e=p<.5?2*p*p:1-2*(1-p)*(1-p),x=(f.a[0]+3+(f.b[0]-f.a[0])*e)*s,y=(f.a[1]+3+(f.b[1]-f.a[1])*e-Math.sin(p*Math.PI)*1.6)*s,z=(.6+.4*Math.min(1,p*5))*s;
+  ctx.globalAlpha=p>.8?(1-p)*5:1;ctx.fillStyle=f.c;ctx.beginPath();ctx.arc(x,y,z*.8,0,7);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.stroke();
+  ctx.font=`${z*1.05}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(f.e,x,y+z*.05);ctx.globalAlpha=1})}
+const loop=t=>{draw(t);requestAnimationFrame(loop)};
+function ui(){const me=cur();$('dot').style.background=$('dot').style.color=COL[me.p];$('name').textContent=me.p===NET.color?'আপনার চাল':me.name+' এর চাল'+(me.bot?' 🤖 (বট)':'');
+ $('dice').disabled=!(G.phase==='roll'&&me.human&&me.p===NET.color);placeDice();
+ $('score').innerHTML=G.pl.map(o=>`<span><i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${COL[o.p]}"></i> ${o.name.slice(0,14)}${o.bot?' 🤖':''} ${o.done?'#'+(G.rank.indexOf(o.p)+1):o.t.filter(x=>x==56).length+'/'+o.t.length} 🃏${o.c.length}</span>`).join('');renderCards()}
+function blast(e,name){const L=$('fxl');if(!L||L.childElementCount>160)return;
+ const tag=document.createElement('div');tag.className='fs';tag.textContent=(name||'')+' : '+e;tag.onanimationend=()=>tag.remove();document.body.append(tag);
+ for(let i=0;i<26;i++){const s=document.createElement('span');s.className='fe';s.textContent=e;
+  s.style.cssText=`left:${Math.random()*92}vw;font-size:${28+Math.random()*46}px;--dx:${(Math.random()-.5)*36}vw;--rt:${(Math.random()-.5)*540}deg;animation-duration:${2.4+Math.random()*1.8}s;animation-delay:${Math.random()*.7}s`;
+  s.onanimationend=()=>s.remove();L.append(s)}
+ beep(700,.08)}
+function react(f,to,e){blast(e,f.name)}
+function botReact(){}
+function renderEmo(){const b=$('emo');if(b.dataset.on)return;b.dataset.on=1;
+ const t=document.createElement('span');t.textContent='আপনার ইমোজি:';t.style.marginRight='4px';
+ b.replaceChildren(t,...EM.map(e=>{const x=document.createElement('button');x.className='eb';x.textContent=e;
+  x.onclick=()=>{if(Date.now()-lastE<1500)return;lastE=Date.now();NET.emoji(e)};return x}))}
+function newGame(n,h,k,smart,bet,first){const seats=n==2?[0,2]:n==3?[0,1,2]:[0,1,2,3];
+ G={pl:seats.map((p,j)=>({p,human:j<h,t:Array(k).fill(-1),v:[],done:false,caps:0,c:[],sh:{},force:0,name:(NAMES[j]||'').trim()||(j<h?'খেলোয়াড় '+(j+1):NM[p]+' বট'),av:AVS[j]})),turn:0,dice:0,phase:'roll',sixes:0,mv:[],fx:[],fx2:[],amb:[],rank:[],moving:false,cu:null,smart,first,pot:bet*n};$('prize').style.display=bet>0?'block':'none';$('prize').textContent='🏆 পুরস্কার: ৳'+bet*n+'  ('+n+' × ৳'+bet+')';
+ es=0;et='all';$('dice').style.display='block';say('');renderEmo();ui();if(!cur().human)setTimeout(botGo,700)}
+function next(){do{G.turn=(G.turn+1)%G.pl.length}while(cur().done);cur().sh={};G.cu=null;G.sixes=0;G.phase='roll';say('');ui();if(!cur().human)setTimeout(botGo,700)}
+async function roll(){if(!G||G.phase!=='roll')return;G.phase='anim';ui();
+ const me0=cur(),d=me0.force||1+(await NET.rnd(6));me0.force=0;const c=$('cube'),b=$('dice'),[fx,fy]=FIN[d-1];
+ b.style.transform='scale(1.45)';c.style.transition='none';c.style.transform=`rotateX(${Math.random()*90}deg) rotateY(${Math.random()*90}deg)`;void c.offsetWidth;
+ c.style.transition='transform 1.1s cubic-bezier(.15,.8,.25,1)';c.style.transform=`rotateX(${720+fx}deg) rotateY(${1080+fy}deg)`;
+ for(let i=0;i<9;i++){beep(300+i*25,.03);await sleep(125)}
+ b.style.transform='';G.dice=d;showBig(d);beep(660,.12);await sleep(500);after()}
+function score(me,i){const r=me.t[i],nr=r<0?0:r+G.dice;let s=nr/5;if(r<0)s+=50;
+ if(nr==56)s+=80;else if(nr>50)s+=30;if(nr==HDR)s-=60;
+ if(nr<=50){const a=(START[me.p]+nr)%52;if(DNG.has(a))s-=60;else if(SAFE.has(a))s+=20;else if(G.pl.some(o=>o!==me&&o.t.some(q=>q>=0&&q<=50&&(START[o.p]+q)%52===a)))s+=100}
+ return s+Math.random()}
+function after(){const me=cur(),d=G.dice;G.sixes=d==6?G.sixes+1:0;
+ if(G.sixes>=3){say('পরপর তিনবার ৬ উঠেছে — চাল বাতিল!');return setTimeout(next,FAST?0:1100)}
+ const mv=me.t.map((_,i)=>i).filter(i=>{const r=me.t[i];return r<0?d==6:r+d<=56});
+ if(!mv.length){say('কোনো ঘুঁটি চালানো সম্ভব নয়');return setTimeout(next,FAST?0:900)}
+ G.mv=mv;
+ if(!me.human)return setTimeout(()=>move(G.smart?mv.map(i=>[score(me,i),i]).sort((a,b)=>b[0]-a[0])[0][1]:mv[Math.random()*mv.length|0]),600);
+ if(mv.length==1||new Set(mv.map(i=>me.t[i])).size==1)return setTimeout(()=>move(mv[0]),FAST?0:350);
+ G.phase='move';say(me.p===NET.color?'জ্বলজ্বলে ঘুঁটিতে ট্যাপ করে চাল দিন':'প্রতিপক্ষ কোন ঘুঁটি চালবে বেছে নিচ্ছে…');ui()}
+async function move(i){if(G.moving)return;G.moving=true;G.phase='anim';ui();
+ const me=cur(),steps=me.t[i]<0?1:G.dice;
+ for(let k=0;k<steps;k++){me.t[i]++;beep(480+k*35,.05);await sleep(170)}
+ const bonus=(await settle(me,i,false))||G.dice==6;
+ G.moving=false;
+ if(finish(me))return;
+ if(!bonus)return next();
+ G.phase='roll';ui();if(!me.human)setTimeout(botGo,800)}
+// after a token has moved forward: danger tiles, captures, home, mystery box. returns true if it earns a bonus roll
+async function settle(me,i,card){let r=me.t[i],bonus=false;const vic=[];
+ if(r<=50&&DNG.has((START[me.p]+r)%52)){const nb=1+(await NET.rnd(4));say('⚠ বিপদের ঘর! পান্ডা ঘুঁটিটাকে '+nb+' ঘর পেছনে ফেলে দিল');beep(120,.3);botReact(me,'all',['🤯']);await pushBack(me,i,nb);r=me.t[i]}
+ else if(r==HDR){const nb=1+(await NET.rnd(4));say('💀 ঘরে ঢোকার পথের বিপদ! পান্ডা ঘুঁটিটাকে '+nb+' ঘর পেছনে ফেলে দিল');beep(120,.3);botReact(me,'all',['🤯']);await pushBack(me,i,nb);r=me.t[i]}
+ if(r>=0&&r<=50){const a=(START[me.p]+r)%52;
+  if(!SAFE.has(a))G.pl.forEach(o=>{if(o===me)return;const j=o.t.map((q,k)=>q>=0&&q<=50&&(START[o.p]+q)%52===a?k:-1).filter(k=>k>=0);if(j.length==1&&!o.sh[j[0]]){vic.push([o,j[0]]);me.caps++}})}
+ if(vic.length){bonus=true;say('💥 ঘুঁটি কাটা পড়েছে!'+(card?'':' আবার চাল পাবেন')+' · 🚑 পান্ডারা ট্রলিতে করে ঘুঁটিটাকে বাড়িতে নিয়ে যাচ্ছে');beep(200,.3);navigator.vibrate&&navigator.vibrate(80);vic.forEach(([v])=>{botReact(v,me,['😭','😡','💀']);botReact(me,v,['😎','😈','🔥'])});await Promise.all(vic.map(([v,j])=>ambulance(v,j)))}
+ if(r==56){bonus=true;say('🏠 ঘুঁটি ঘরে পৌঁছেছে!'+(card?'':' আবার চাল পাবেন'));jingle();G.fx2.push({k:'cheer',x:7.5,y:7.5,t0:performance.now(),dur:2200});botReact(me,'all',['👏','🔥']);await sleep(500)}
+ if(r>=0&&r<=50&&MB.has((START[me.p]+r)%52))await giveCard(me);
+ return bonus}
+function finish(me){if(me.done||!me.t.every(x=>x==56))return false;me.done=true;G.rank.push(me.p);const left=G.pl.filter(o=>!o.done);
+ if(left.length<=1||G.first){left.sort((a,b)=>b.t.reduce((x,y)=>x+y,0)-a.t.reduce((x,y)=>x+y,0)).forEach(o=>G.rank.push(o.p));over();return true}
+ say(`${me.name} ${G.rank.length} নম্বর স্থান পেয়েছে!`);next();return true}
+// panda hits the token with a stick once per step, token goes back slowly (also used by the push-back card)
+async function pushBack(pl,i,n){for(let k=0;k<n&&pl.t[i]>=0;k++){const[x,y]=pos(pl.p,pl.t[i],i);G.fx2.push({k:'hit',x,y,t0:performance.now(),dur:1100});await sleep(560);beep(90,.2);beep(220,.06);navigator.vibrate&&navigator.vibrate(60);pl.t[i]--;await sleep(520)}}
+async function ambulance(v,j){G.amb.push({pl:v,i:j});await sleep(600);const d=Math.max(130,Math.min(300,5000/(v.t[j]+1)));let n=0;while(v.t[j]>-1){v.t[j]--;if(n++%4==0)beep(n%8?880:660,.08);await sleep(d)}await sleep(400);G.amb=G.amb.filter(a=>!(a.pl===v&&a.i===j))}
+async function giveCard(me){if(me.c.length>=MAXC){say(`🎁 মিস্ট্রি বক্স! ${me.name} এর কার্ডের ব্যাগ ভর্তি, নতুন কার্ড নেওয়া গেল না`);beep(200,.1);await sleep(1000);return}
+ let ix=me.lc===undefined?await NET.rnd(CK.length):await NET.rnd(CK.length-1);if(me.lc!==undefined&&ix>=me.lc)ix++;me.lc=ix;const t=CK[ix];me.c.push(t);say(`🎁 মিস্ট্রি বক্স! ${me.name} পেয়েছে ${CARDS[t].e} ${CARDS[t].n} — ${CARDS[t].d}`);showBig(CARDS[t].e);jingle();ui();await sleep(1600)}
+// ---------- cards ----------
+const ab=(o,r)=>(START[o.p]+r)%52;
+function targets(me){const L=[];G.pl.forEach(o=>{if(o===me)return;o.t.forEach((r,j)=>{if(r>=0&&r<=50&&!SAFE.has(ab(o,r))&&!o.sh[j]&&o.t.filter(q=>q===r).length<2)L.push({pl:o,i:j})})});return L}
+const fwdCands=me=>me.t.map((r,i)=>r>=0&&r<56?{pl:me,i}:null).filter(Boolean);
+const shieldCands=me=>me.t.map((r,i)=>r>=0&&r<=50&&!me.sh[i]?{pl:me,i}:null).filter(Boolean);
+function canUse(me,k){return k==='back3'?targets(me).length>0:k==='fwd1'?fwdCands(me).length>0:k==='shield'?shieldCands(me).length>0:k==='setopp'?G.pl.some(o=>o!==me&&!o.done):true}
+async function playCard(me,k,a){if(G.moving||G.phase==='over')return;G.moving=true;G.phase='anim';G.cu=null;ui();
+ const x=me.c.indexOf(k);if(x>=0)me.c.splice(x,1);
+ say(`${CARDS[k].e} ${me.name} ব্যবহার করল “${CARDS[k].n}” — ${CARDS[k].d}`);showBig(CARDS[k].e);beep(600,.1);await sleep(1000);
+ if(k==='setme'){me.force=a.val;say(`🎯 ${me.name} এর পরের পাশা ঠিক করা হয়েছে!`);await sleep(600)}
+ else if(k==='setopp'){a.opp.force=a.val;say(`🎲 ${a.opp.name} এর পরের পাশা ঠিক করে দেওয়া হয়েছে!`);botReact(a.opp,me,['😡','😭']);await sleep(900)}
+ else if(k==='shield'){me.sh[a.i]=true;say(`🛡️ ঘুঁটিটি ঢালে সুরক্ষিত — ${me.name} এর পরের চাল পর্যন্ত`);beep(800,.2);await sleep(700)}
+ else if(k==='back3'){say(`👊 ${a.pl.name} এর ঘুঁটি ৩ ঘর পেছনে ধাক্কা খেল!`);botReact(a.pl,me,['😡','😭','💀']);await pushBack(a.pl,a.i,3)}
+ else if(k==='fwd1'){me.t[a.i]++;beep(520,.06);await sleep(350);await settle(me,a.i,true)}
+ G.moving=false;
+ if(finish(me))return;
+ G.phase='roll';ui()}
+function renderCards(){const me=cur(),b=$('cards');b.replaceChildren();
+ if(!G||!me.human||me.p!==NET.color||(G.phase!=='roll'&&G.phase!=='pick')||(G.phase==='roll'&&!me.c.length)){b.style.display='none';return}
+ b.style.display='flex';const lab=document.createElement('div');lab.className='cl';b.append(lab);
+ if(G.phase==='pick'){lab.textContent=G.cu.txt;const r=document.createElement('div');r.className='row';
+  const mk=(t,fn)=>{const x=document.createElement('button');x.className='chip';x.textContent=t;x.onclick=fn;r.append(x)};
+  (G.cu.opts||[]).forEach(([t,fn])=>mk(t,fn));mk('✖ বাতিল',cancelCard);b.append(r);return}
+ lab.textContent='🃏 আপনার কার্ড — ট্যাপ করলে ব্যবহার হবে (পাশা ছোঁড়ার আগে ব্যবহার করতে হয়):';
+ me.c.forEach(k=>{const ok=canUse(me,k),x=document.createElement('button');x.className='cb';x.disabled=!ok;
+  x.innerHTML=`<b>${CARDS[k].e} ${CARDS[k].n}</b><span>${CARDS[k].d}${ok?'':' <i>(এখন ব্যবহার করা যাবে না)</i>'}</span>`;x.onclick=()=>startCard(k);b.append(x)})}
+function cancelCard(){if(G.phase!=='pick')return;G.cu=null;G.phase='roll';ui()}
+function startCard(k){const me=cur();if(G.phase!=='roll'||!me.human||me.p!==NET.color||!canUse(me,k))return;
+ const go=a=>NET.act({t:'card',k,a}),vals=cb=>[1,2,3,4,5,6].map(v=>[''+v,()=>cb(v)]);
+ if(k==='setme'){G.phase='pick';G.cu={txt:'🎯 পরের পাশায় কোন সংখ্যা চান? বেছে নিন:',opts:vals(v=>go({val:v}))}}
+ else if(k==='setopp'){G.phase='pick';G.cu={txt:'🎲 কার পাশা ঠিক করবেন?',opts:G.pl.filter(o=>o!==me&&!o.done).map(o=>[o.name,()=>{G.cu={txt:`🎲 ${o.name} এর পরের পাশায় কোন সংখ্যা পড়বে?`,opts:vals(v=>go({opp:o,val:v}))};renderCards()}])}}
+ else{const c=k==='back3'?targets(me):k==='fwd1'?fwdCands(me):shieldCands(me);
+  if(c.length==1)return go(c[0]);
+  G.phase='pick';G.cu={txt:'👆 বোর্ডে জ্বলজ্বলে ঘুঁটিতে ট্যাপ করুন',cands:c,k}}
+ ui()}
+// ---------- bot brain ----------
+function rollScores(me){const o=G.dice,S=[];for(let v=1;v<=6;v++){G.dice=v;const m=me.t.map((_,i)=>i).filter(i=>{const r=me.t[i];return r<0?v==6:r+v<=56});S.push(m.length?Math.max(...m.map(i=>score(me,i)))+(v==6?25:0):-999)}G.dice=o;return S}
+const argBest=S=>S.indexOf(Math.max(...S))+1,argWorst=S=>S.indexOf(Math.min(...S))+1;
+function threatened(me,i){const r=me.t[i],a=ab(me,r);if(SAFE.has(a)||me.sh[i]||me.t.filter(q=>q===r).length>1)return false;
+ return G.pl.some(o=>o!==me&&o.t.some(q=>{if(q<0||q>50)return false;const dd=(a-ab(o,q)+52)%52;return dd>=1&&dd<=6}))}
+function botCard(me){const has=k=>me.c.includes(k);
+ if(has('shield')){const c=shieldCands(me).filter(x=>threatened(me,x.i)).sort((p,q)=>me.t[q.i]-me.t[p.i]);if(c.length)return{k:'shield',a:c[0]}}
+ if(has('back3')){const c=targets(me).filter(x=>x.pl.t[x.i]>=8).sort((p,q)=>q.pl.t[q.i]-p.pl.t[p.i]);if(c.length)return{k:'back3',a:c[0]}}
+ if(has('fwd1')){const o=G.dice;G.dice=1;const c=fwdCands(me).map(x=>[score(me,x.i),x]).filter(x=>x[0]>85).sort((p,q)=>q[0]-p[0]);G.dice=o;if(c.length)return{k:'fwd1',a:c[0][1]}}
+ if(has('setopp')){const L=G.pl.filter(o=>o!==me&&!o.done&&!o.force).sort((p,q)=>q.t.reduce((x,y)=>x+y,0)-p.t.reduce((x,y)=>x+y,0));if(L.length)return{k:'setopp',a:{opp:L[0],val:argWorst(rollScores(L[0]))}}}
+ if(has('setme')&&!me.force)return{k:'setme',a:{val:argBest(rollScores(me))}};
+ return null}
+async function botGo(){if(!G||G.phase!=='roll')return;const me=cur();if(me.human)return;
+ for(let n=0;n<2;n++){const p=botCard(me);if(!p)break;await playCard(me,p.k,p.a);if(!G||G.phase!=='roll'||cur()!==me)return;await sleep(300)}
+ roll()}
+async function jingle(long){for(const f of(long?[523,659,784,1047,784,1047,1319]:[523,659,784,1047])){beep(f,.14);await sleep(130)}}
+function over(){G.phase='over';ui();NET.over(G.rank[0]);const w=G.pl.find(o=>o.p==G.rank[0]);
+ WIN={w,t0:performance.now(),fl:Array.from({length:36},()=>({x:Math.random(),y:Math.random(),v:.12+Math.random()*.2,e:['🌸','🌼','🌺','🌷','💐'][Math.random()*5|0]}))};
+ $('wt').textContent=`🏆 ${w.name} জিতেছে${G.pot?' ৳'+G.pot:''}!`;
+ $('wr').innerHTML=G.rank.map((p,k)=>{const o=G.pl.find(q=>q.p==p);return`<div>${['🥇','🥈','🥉','4️⃣'][k]} <b style="color:${COL[p]}">${o.name}</b> <small>· ${o.caps}টি ঘুঁটি কেটেছে</small></div>`}).join('');
+ $('win').style.display='flex';jingle(1);setTimeout(()=>jingle(1),1300)}
+function winDraw(t){const c=$('wc'),D=devicePixelRatio||1,w=360,h=300;if(c.width!=w*D){c.width=w*D;c.height=h*D}const x=c.getContext('2d');x.setTransform(D,0,0,D,0,0);x.clearRect(0,0,w,h);
+ const u=(t-WIN.t0)/1000,P=WIN.w,bob=Math.sin(u*5)*3;
+ const g=x.createRadialGradient(180,150,20,180,150,240);g.addColorStop(0,'#ffe082');g.addColorStop(1,'#6a1b9a');x.fillStyle=g;x.beginPath();x.roundRect(0,0,w,h,18);x.fill();
+ x.fillStyle=COL[P.p];x.beginPath();x.roundRect(175,215+bob,110,90,24);x.fill();
+ x.strokeStyle=COL[P.p];x.lineWidth=14;x.lineCap='round';x.beginPath();x.moveTo(190,235+bob);x.lineTo(160,205+bob);x.stroke();x.fillStyle='#f1c27d';x.beginPath();x.arc(158,203+bob,11,0,7);x.fill();
+ x.save();x.beginPath();x.arc(230,165+bob,48,0,7);x.fillStyle=COL[P.p];x.fill();x.clip();
+ if(P.av)x.drawImage(P.av,182,117+bob,96,96);else{x.font='64px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(P.human?'🙂':'🤖',230,167+bob)}x.restore();
+ x.strokeStyle='#ffd54f';x.lineWidth=5;x.beginPath();x.arc(230,165+bob,48,0,7);x.stroke();x.font='38px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('👑',230,108+bob);
+ const e=Math.min(1,u/1.2),px=-50+145*(1-(1-e)*(1-e)),jump=u>1.2?Math.abs(Math.sin(u*8))*10:0,py=195-jump,hx=px+1.45*34,hy=py+3;
+ panda(x,px,py,34,u>1.2?{l:[-1.1,-.9],r:[1.1,-.9]}:{r:[1.45,.1]});
+ let bx=hx,by=hy;if(u>=2){bx=158;by=196+bob+Math.sin(u*8)*2}else if(u>1.2){const q=(u-1.2)/.8;bx=hx+(158-hx)*q;by=hy+(203+bob-hy)*q-Math.sin(q*Math.PI)*45}
+ x.font='34px sans-serif';x.fillText('💰',bx,by);
+ if(G.pot&&u>2){x.font='bold 34px sans-serif';x.lineWidth=5;x.strokeStyle='#4a2c00';x.fillStyle='#ffd54f';x.strokeText('৳'+G.pot,95,60);x.fillText('৳'+G.pot,95,60)}
+ x.font='22px sans-serif';WIN.fl.forEach(f=>{const fy=((f.y+u*f.v)%1.3)-.15;x.fillText(f.e,f.x*w+Math.sin(u*2+f.x*9)*12,fy*h)})}
+function loadAv(k,file){const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=c.height=128;const m=Math.min(im.width,im.height);c.getContext('2d').drawImage(im,(im.width-m)/2,(im.height-m)/2,m,m,0,0,128,128);AVS[k]=c;renderSeats()};im.src=fr.result};fr.readAsDataURL(file)}
+function renderSeats(){const n=+$('np').value,h=Math.min(+$('nh').value,n),seats=n==2?[0,2]:n==3?[0,1,2]:[0,1,2,3],box=$('seats');box.replaceChildren();
+ seats.forEach((p,k)=>{const d=document.createElement('div');d.className='seat';const ph=document.createElement('label');ph.className='ph';
+  if(AVS[k]){const im=new Image();im.src=AVS[k].toDataURL();ph.append(im)}else ph.textContent='📷';
+  const f=document.createElement('input');f.type='file';f.accept='image/*';f.hidden=true;f.onchange=()=>f.files[0]&&loadAv(k,f.files[0]);ph.append(f);
+  const nm=document.createElement('input');nm.className='nm';nm.maxLength=12;nm.placeholder=k<h?'খেলোয়াড় '+(k+1):NM[p]+' বট';nm.value=NAMES[k];nm.oninput=()=>NAMES[k]=nm.value;
+  const dt=document.createElement('i');dt.style.background=COL[p];d.append(dt,ph,nm);box.append(d)})}
+cv.addEventListener('pointerdown',e=>{if(!G||!cur().human)return;
+ const b=cv.getBoundingClientRect(),s=b.width/15,x=(e.clientX-b.left)/s,y=(e.clientY-b.top)/s;
+ if(G.phase==='move'){const o=layout().filter(o=>o.pl===cur()&&G.mv.includes(o.i)).find(o=>Math.hypot(o.x-x,o.y-y)<.6);if(o)NET.act({t:'move',i:o.i})}
+ else if(G.phase==='pick'&&G.cu&&G.cu.cands){const C=G.cu.cands,o=layout().filter(o=>C.some(c=>c.pl===o.pl&&c.i===o.i)).find(o=>Math.hypot(o.x-x,o.y-y)<.7);if(o){const k=G.cu.k;NET.act({t:'card',k,a:{pl:o.pl,i:o.i}})}}});
+$('dice').onclick=()=>NET.act({t:'roll'});
+$('go').onclick=()=>{const n=+$('np').value,h=Math.min(+$('nh').value,n);$('menu').style.display='none';$('res').innerHTML='';newGame(n,h,+$('tk').value,$('df').value=='1',Math.max(0,+$('bet').value||0),$('mode').value=='1')};
+$('np').onchange=$('nh').onchange=renderSeats;
+$('wb').onclick=()=>{location.href='/'};
+const winLoop=t=>{if(WIN)winDraw(t);requestAnimationFrame(winLoop)};requestAnimationFrame(winLoop);renderSeats();
+addEventListener('resize',fit);fit();requestAnimationFrame(loop);
+const RULES=[
+'🎲 পাশায় ৬ উঠলে ঘুঁটি বের করা যায় এবং আবার চাল পাওয়া যায়।',
+'🏁 যে আগে নিজের সব ঘুঁটি ঘরে পৌঁছে দেবে সে-ই জিতবে।',
+'★ তারা চিহ্নিত ঘর ও শুরুর ঘর নিরাপদ — সেখানে ঘুঁটি কাটা যায় না।',
+'⚠ বিপদের ঘরে পা দিলে প্রতিবার এলোমেলোভাবে ১ থেকে ৪ ঘরের মধ্যে যেকোনো ঘর পেছনে চলে যায় (প্রতিবার আলাদা সংখ্যা)। 💀 ঘরে ঢোকার রাস্তার বিপদের ঘরেও একই নিয়ম।',
+'💥 প্রতিপক্ষের ঘুঁটি কাটলে বা নিজের ঘুঁটি ঘরে পৌঁছালে আবার চাল পাওয়া যায়।',
+'🗼 একই ঘরে নিজের ২টি ঘুঁটি থাকলে সেটি টাওয়ার — কাটা যায় না।',
+'🚫 পরপর তিনবার ৬ উঠলে সেই চাল বাতিল হয়ে যায়।',
+'🍀 খেলার শুরুতে প্রত্যেকের প্রথম ১ থেকে ৪ চালের মধ্যে একবার ৬ উঠবেই। এরপর পাশা সম্পূর্ণ এলোমেলো।',
+'⏳ প্রথমবার ৩০ সেকেন্ডে চাল না দিলে চাল প্রতিপক্ষের কাছে চলে যায়। এরপর চাল পেলে ১৫ সেকেন্ড সময় পাবেন। আবার চাল না দিলে (নেট সমস্যা বা বেরিয়ে গেলে) আপনার হয়ে সহজ বট খেলবে। ফিরে এলে বট থেমে যাবে। এভাবে খেলা শেষ পর্যন্ত চলবে।',
+'🔄 নেট চলে গেলে বা পেজ বন্ধ হলে আবার ঢুকলে খেলা যেখানে ছিল সেখান থেকেই চলবে। খেলা শেষ হওয়ার আগে কেউ জিতবে না।',
+'🎁 মিস্ট্রি বক্স: প্রতিটি শুরুর ঘর থেকে ৩য় ঘরে ঘুঁটি থামলে প্রতিবার এলোমেলো একটি কার্ড পাওয়া যায় — আগের বারের কার্ডটি আবার আসে না (সর্বোচ্চ ৪টি কার্ড রাখা যায়)। কার্ড পাশা ছোঁড়ার আগে ব্যবহার করতে হয়।',
+'😀 ইমোজি শুধু আপনার নিজের স্ক্রিন থেকে পাঠানো যায়। পাঠালে দুজনেরই পুরো স্ক্রিনে ছড়িয়ে পড়ে।',
+'❌ "বাতিল করুন" চাপলে গেম ছেড়ে বের হওয়া যায়, তবে তাতে হার ধরা হবে এবং প্রতিপক্ষ জিতবে।'];
+const rulesHtml=RULES.map(r=>`<div class="it">${r}</div>`).join(''),cardsHtml=Object.values(CARDS).map(c=>`<div class="it"><b>${c.e} ${c.n}</b> — ${c.d}</div>`).join('');
+$('rl').innerHTML=rulesHtml;$('cl2').innerHTML=cardsHtml;$('rules').innerHTML=rulesHtml+'<div class="it"><b>🃏 কার্ডের কাজ</b></div>'+cardsHtml;
+$('lv').onclick=()=>$('leave').style.display='flex';$('ln').onclick=()=>$('leave').style.display='none';$('ly').onclick=()=>{$('leave').style.display='none';NET.resign()};
+$('hb').onclick=()=>$('help').style.display='flex';$('hx').onclick=()=>$('help').style.display='none';
+NET.boot();</script></body></html>

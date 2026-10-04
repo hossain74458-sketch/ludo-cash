@@ -1,0 +1,21 @@
+{
+  "name": "ludo-cash",
+  "version": "1.0.0",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node _tests/run.js",
+    "test:browser": "node _tests/browser.test.js 2 both",
+    "test:pwa": "node _tests/pwa.test.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "socket.io": "^4.8.4"
+  }
+}
