@@ -100,7 +100,7 @@ const FT=['','rotateY(90deg)','rotateX(90deg)','rotateX(-90deg)','rotateY(-90deg
 const PIPS=['000010000','100000001','100010001','101000101','101010101','101101101'];
 $('cube').innerHTML=PIPS.map((p,k)=>`<div class="fc" style="--t:${FT[k]}">${[...p].map(c=>`<i class="${c=='1'?'':'o'}"></i>`).join('')}</div>`).join('');
 let W=0,G=null,ac,es=0,et='all',lastE=0,WIN=null;const AVS=[null,null,null,null],NAMES=['','','',''];
-let FAST=false;const sleep=ms=>new Promise(r=>setTimeout(r,FAST?0:ms)),cur=()=>G.pl[G.turn],say=m=>$('msg').textContent=m;
+let FAST=false;const K=.5,sleepR=ms=>new Promise(r=>setTimeout(r,FAST?0:ms)),sleep=ms=>sleepR(ms*K),cur=()=>G.pl[G.turn],say=m=>$('msg').textContent=m;
 // ---------- সাউন্ড ইঞ্জিন: নরম টোন (মারিম্বার মতো) + ব্যাকগ্রাউন্ড মিউজিক (চালু/বন্ধ করা যায়) ----------
 const MUSIC_VOL=.5;                                   // মিউজিক বেশি/কম লাগলে এই সংখ্যা (০–১) বদলান
 const PREF=k=>{try{return localStorage.getItem(k)!=='0'}catch(e){return true}},SETP=(k,v)=>{try{localStorage.setItem(k,v?'1':'0')}catch(e){}};
@@ -226,10 +226,10 @@ function renderEmo(){const b=$('emo');if(b.dataset.on)return;b.dataset.on=1;
   x.onclick=()=>{if(Date.now()-lastE<1500)return;lastE=Date.now();NET.emoji(e)};return x}))}
 function newGame(n,h,k,smart,bet,first){const seats=n==2?[0,2]:n==3?[0,1,2]:[0,1,2,3];
  G={pl:seats.map((p,j)=>({p,human:j<h,t:Array(k).fill(-1),v:[],done:false,caps:0,c:[],sh:{},force:0,name:(NAMES[j]||'').trim()||(j<h?'খেলোয়াড় '+(j+1):NM[p]+' বট'),av:AVS[j]})),turn:0,dice:0,phase:'roll',sixes:0,mv:[],fx:[],fx2:[],amb:[],rank:[],moving:false,cu:null,smart,first,pot:bet*n};$('prize').style.display=bet>0?'block':'none';$('prize').textContent='🏆 পুরস্কার: ৳'+bet*n+'  ('+n+' × ৳'+bet+')';
- es=0;et='all';$('dice').style.display='block';say('');renderEmo();ui();if(!cur().human)setTimeout(botGo,350)}
-function next(){do{G.turn=(G.turn+1)%G.pl.length}while(cur().done);cur().sh={};G.cu=null;G.sixes=0;G.phase='roll';say('');ui();if(!cur().human)setTimeout(botGo,250)}
+ es=0;et='all';$('dice').style.display='block';say('');renderEmo();ui();if(!cur().human)setTimeout(botGo,250)}
+function next(){do{G.turn=(G.turn+1)%G.pl.length}while(cur().done);cur().sh={};G.cu=null;G.sixes=0;G.phase='roll';say('');ui();if(!cur().human)setTimeout(botGo,120)}
 async function roll(){if(!G||G.phase!=='roll')return;G.phase='anim';ui();
- const me0=cur(),sp=(me0.human||!G.hl)?1:.4,d=me0.force||1+(await NET.rnd(6));me0.force=0;   // বটের পাশা ছোঁড়া দ্রুত (sp), মানুষের আগের মতোই
+ const me0=cur(),sp=.4,d=me0.force||1+(await NET.rnd(6));me0.force=0;   // বটের পাশা ছোঁড়া দ্রুত (sp), মানুষের আগের মতোই
  const c=$('cube'),b=$('dice'),[fx,fy]=FIN[d-1];
  b.style.transform='scale(1.45)';c.style.transition='none';c.style.transform=`rotateX(${Math.random()*90}deg) rotateY(${Math.random()*90}deg)`;void c.offsetWidth;
  c.style.transition=`transform ${1.1*sp}s cubic-bezier(.15,.8,.25,1)`;c.style.transform=`rotateX(${720+fx}deg) rotateY(${1080+fy}deg)`;
@@ -240,21 +240,21 @@ function score(me,i){const r=me.t[i],nr=r<0?0:r+G.dice;let s=nr/5;if(r<0)s+=50;
  if(nr<=50){const a=(START[me.p]+nr)%52;if(DNG.has(a))s-=60;else if(SAFE.has(a))s+=20;else if(G.pl.some(o=>o!==me&&o.t.some(q=>q>=0&&q<=50&&(START[o.p]+q)%52===a)))s+=100}
  return s+Math.random()}
 function after(){const me=cur(),d=G.dice;G.sixes=d==6?G.sixes+1:0;
- if(G.sixes>=3){say('পরপর তিনবার ৬ উঠেছে — চাল বাতিল!');return setTimeout(next,FAST?0:1100)}
+ if(G.sixes>=3){say('পরপর তিনবার ৬ উঠেছে — চাল বাতিল!');return setTimeout(next,FAST?0:700)}
  const mv=me.t.map((_,i)=>i).filter(i=>{const r=me.t[i];return r<0?d==6:r+d<=56});
- if(!mv.length){say('কোনো ঘুঁটি চালানো সম্ভব নয়');return setTimeout(next,FAST?0:900)}
+ if(!mv.length){say('কোনো ঘুঁটি চালানো সম্ভব নয়');return setTimeout(next,FAST?0:450)}
  G.mv=mv;
- if(!me.human)return setTimeout(()=>move(G.hl?humanPick(me,mv):G.smart?mv.map(i=>[score(me,i),i]).sort((a,b)=>b[0]-a[0])[0][1]:mv[Math.random()*mv.length|0]),G.hl?160+Math.random()*260:250);
- if(mv.length==1||new Set(mv.map(i=>me.t[i])).size==1)return setTimeout(()=>move(mv[0]),FAST?0:350);
+ if(!me.human)return setTimeout(()=>move(G.hl?humanPick(me,mv):G.smart?mv.map(i=>[score(me,i),i]).sort((a,b)=>b[0]-a[0])[0][1]:mv[Math.random()*mv.length|0]),G.hl?160+Math.random()*260:150);
+ if(mv.length==1||new Set(mv.map(i=>me.t[i])).size==1)return setTimeout(()=>move(mv[0]),FAST?0:150);
  G.phase='move';say(me.p===NET.color?'জ্বলজ্বলে ঘুঁটিতে ট্যাপ করে চাল দিন':'প্রতিপক্ষ কোন ঘুঁটি চালবে বেছে নিচ্ছে…');ui()}
 async function move(i){if(G.moving)return;G.moving=true;G.phase='anim';ui();
  const me=cur(),steps=me.t[i]<0?1:G.dice;
- for(let k=0;k<steps;k++){me.t[i]++;beep(480+k*35,.05);await sleep(me.human||!G.hl?170:90)}
+ for(let k=0;k<steps;k++){me.t[i]++;beep(480+k*35,.05);await sleep(90/K)}
  const bonus=(await settle(me,i,false))||G.dice==6;
  G.moving=false;
  if(finish(me))return;
  if(!bonus)return next();
- G.phase='roll';ui();if(!me.human)setTimeout(botGo,300)}
+ G.phase='roll';ui();if(!me.human)setTimeout(botGo,150)}
 // after a token has moved forward: danger tiles, captures, home, mystery box. returns true if it earns a bonus roll
 async function settle(me,i,card){let r=me.t[i],bonus=false;const vic=[];
  if(r<=50&&DNG.has((START[me.p]+r)%52)){const nb=1+(await NET.rnd(4));say('⚠ বিপদের ঘর! পান্ডা ঘুঁটিটাকে '+nb+' ঘর পেছনে ফেলে দিল');beep(120,.3);botReact(me,'all',['🤯']);await pushBack(me,i,nb);r=me.t[i]}
@@ -269,8 +269,8 @@ function finish(me){if(me.done||!me.t.every(x=>x==56))return false;me.done=true;
  if(left.length<=1||G.first){left.sort((a,b)=>b.t.reduce((x,y)=>x+y,0)-a.t.reduce((x,y)=>x+y,0)).forEach(o=>G.rank.push(o.p));over();return true}
  say(`${me.name} ${G.rank.length} নম্বর স্থান পেয়েছে!`);next();return true}
 // panda hits the token with a stick once per step, token goes back slowly (also used by the push-back card)
-async function pushBack(pl,i,n){for(let k=0;k<n&&pl.t[i]>=0;k++){const[x,y]=pos(pl.p,pl.t[i],i);G.fx2.push({k:'hit',x,y,t0:performance.now(),dur:1100});await sleep(560);beep(90,.2);beep(220,.06);navigator.vibrate&&navigator.vibrate(60);pl.t[i]--;await sleep(520)}}
-async function ambulance(v,j){G.amb.push({pl:v,i:j});await sleep(600);const d=Math.max(130,Math.min(300,5000/(v.t[j]+1)));let n=0;while(v.t[j]>-1){v.t[j]--;if(n++%4==0)beep(n%8?880:660,.08);await sleep(d)}await sleep(400);G.amb=G.amb.filter(a=>!(a.pl===v&&a.i===j))}
+async function pushBack(pl,i,n){for(let k=0;k<n&&pl.t[i]>=0;k++){const[x,y]=pos(pl.p,pl.t[i],i);G.fx2.push({k:'hit',x,y,t0:performance.now(),dur:1100});await sleepR(480);beep(90,.2);beep(220,.06);navigator.vibrate&&navigator.vibrate(60);pl.t[i]--;await sleepR(400)}}
+async function ambulance(v,j){G.amb.push({pl:v,i:j});await sleepR(450);const d=Math.max(80,Math.min(180,3200/(v.t[j]+1)));let n=0;while(v.t[j]>-1){v.t[j]--;if(n++%4==0)beep(n%8?880:660,.08);await sleepR(d)}await sleepR(300);G.amb=G.amb.filter(a=>!(a.pl===v&&a.i===j))}
 async function giveCard(me){if(me.c.length>=MAXC){say(`🎁 মিস্ট্রি বক্স! ${me.name} এর কার্ডের ব্যাগ ভর্তি, নতুন কার্ড নেওয়া গেল না`);beep(200,.1);await sleep(1000);return}
  let ix=me.lc===undefined?await NET.rnd(CK.length):await NET.rnd(CK.length-1);if(me.lc!==undefined&&ix>=me.lc)ix++;me.lc=ix;const t=CK[ix];me.c.push(t);say(`🎁 মিস্ট্রি বক্স! ${me.name} পেয়েছে ${CARDS[t].e} ${CARDS[t].n} — ${CARDS[t].d}`);showBig(CARDS[t].e);jingle();ui();await sleep(1600)}
 // ---------- cards ----------
